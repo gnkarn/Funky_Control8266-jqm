@@ -6,7 +6,7 @@ and his description http://www.whatimade.today/esp8266-on-websockets-mdns-ota-an
 mejorado por GNK  2016  -->
 
 <head>
-   <title>LED Control using JQM</title>
+    <title>LED Control using JQM</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <!-- para host local de JQM
@@ -18,14 +18,10 @@ mejorado por GNK  2016  -->
     <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
     <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-
     <link type="text/css" rel="stylesheet" href="css/wheelcolorpicker.css" />
-
-    
     <!-- color picker -->
     <script type="text/javascript" src="js/jquery.wheelcolorpicker.js"></script>
     <script src="js/myjs.js"></script>
-  
 </head>
 
 <body>
@@ -45,9 +41,8 @@ mejorado por GNK  2016  -->
                 <label for="text1">WebSocket IP</label>
                 <input type="text" id="webSocketCell" value="ws://192.168.178.19:81/" onblur='WSConnect()' />
             </div>
-            
             <div class="ui-mini ui-grid-d my-breakpoint">
-            <!--botones 
+                <!--botones 
                 
                 -->
                 <!-- menu desplegable -->
@@ -56,24 +51,44 @@ mejorado por GNK  2016  -->
                         <legend>EFECTOS:</legend>
                         <label for="menu-efectos">Efecto1</label>
                         <select name="menu-efectos" id="menu-efectos" data-native-menu="true" data-icon="info">
-                            <option value="1">Efecto 1.1</option>
-                            <option value="2" selected="selected">Efecto 1.2</option>
-                            <option value="3">Efecto 1.3</option>
-                            <option value="4">Efecto 1.4</option>
-                            <option value="5">Efecto 1.5</option>
-                            <option value="6">Efecto 1.6</option>
-                            <option value="7">Efecto 1.7</option>
+                            <option value="0">Dots1</option>
+                            <option value="1" selected="selected">Dots2</option>
+                            <option value="2">SlowMandala2</option>
+                            <option value="3">SlowMandala3</option>
+                            <option value="4">Mandala8</option>
+                            <option value="5">MSGEQtest</option>
+                            <option value="6">MSGEQtest2</option>
                             <!-- etc. -->
                         </select>
-                        <label for="menu-efectos2">Efecto2</label>
+                        <label for="menu-efectos2">Efectos Audio </label>
                         <select name="menu-efectos2" id="menu-efectos2">
-                            <option value="8">Efecto 2.1</option>
-                            <option value="9" selected="selected">Efecto 2.2</option>
-                            <option value="10">Efecto 2.3</option>
-                            <option value="11">Efecto 2.4</option>
-                            <option value="12">Efecto 2.5</option>
-                            <option value="13">Efecto 2.6</option>
-                            <option value="14">Efecto 2.7</option>
+                            <option value="7">MSGEQtest3</option>
+                            <option value="8" selected="selected">MSGEQtest3</option>
+                            <option value="9">AudioSpiral</option>
+                            <option value="10">MSGEQtest5</option>
+                            <option value="11">MSGEQtest6</option>
+                            <option value="12">MSGEQtest7</option>
+                            <option value="13">MSGEQtest8</option>
+                            <option value="14">MSGEQtest9</option>
+                            <option value="15">CopyTest</option>
+                            <option value="16">CopyTest2</option>
+                            <option value="17">Audio1</option>
+                            <option value="18">Audio2</option>
+                            <option value="19">Audio3</option>
+                            <option value="20">Audio4</option>
+                            <option value="21">CaleidoTest2</option>
+                            <option value="22">CaleidoTest1</option>
+                            <option value="23">Audio5</option>
+                            <option value="24">Audio6</option>
+                            <option value="25">NoiseExample1</option>
+                            <option value="26">NoiseExample2</option>
+                            <option value="27">NoiseExample3</option>
+                            <option value="28">NoiseExample4</option>
+                            <option value="29">NoiseExample5</option>
+                            <option value="30">NoiseExample6</option>
+                            <option value="31">NoiseExample7</option>
+                            <option value="32">LedsNoise</option>
+                            
                             <!-- etc. -->
                         </select>
                     </fieldset>
@@ -96,30 +111,30 @@ mejorado por GNK  2016  -->
                 <input type="range" id="slider3-range" value="168" min="0" max="255" step="1" name="sliderd" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider3" />
             </div>
             <div class="ui-field-contain">
-                <label for="slider4-range">WhiteLeds</label>
+                <label for="slider4-range">Parametro1</label>
                 <input type="range" id="slider4-range" value="168" min="0" max="1023" step="1" name="slidere" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider4" />
             </div>
         </div>
         <!-- color picker -->
         <div class="ui-mini ui-grid-d ui-responsive">
-            <div class="ui-block-a" style="padding: 5px" >
+            <div class="ui-block-a" style="padding: 5px">
                 Pick a color:
                 <!--<input type="text" data-wheelcolorpicker="" id="color-input">-->
                 <input type="text" data-wheelcolorpicker="" id="color-input" data-wcp-sliders="whsvp" name="sliderw">
             </div>
-            <div class="ui-block-b"  style="padding: 5px" >
+            <div class="ui-block-b" style="padding: 5px">
                 Slider events
                 <input type="text" readonly="" id="event-slider">
             </div>
-            <div class="ui-block-c" style="padding: 5px" >
+            <div class="ui-block-c" style="padding: 5px">
                 Input events
                 <input type="text" readonly="" id="event-input">
             </div>
-            <div class="ui-block-d" style="padding: 5px" >
+            <div class="ui-block-d" style="padding: 5px">
                 RGB
                 <input type="text" readonly="" id="event-color">
             </div>
-            <div class="ui-block-e" style="padding: 5px" >
+            <div class="ui-block-e" style="padding: 5px">
                 hsv
                 <input type="text" readonly="" id="event-color2">
             </div>

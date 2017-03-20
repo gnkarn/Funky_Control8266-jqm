@@ -236,11 +236,13 @@ void cylon() {
 
 
 // Fill the x/y array of 8-bit noise values using the inoise8 function.
-void fillnoise8a() {
+void fillnoise8a(byte nada , byte nada1) {
   // If we're runing at a low "speed", some 8-bit artifacts become visible
   // from frame-to-frame.  In order to reduce this, we can do some fast data-smoothing.
   // The amount of data smoothing we're doing depends on "speed".
   uint8_t dataSmoothing = 0;
+  speed = qadd8(speed,myparameter1/4);
+
   if( speed < 50) {
     dataSmoothing = 200 - (speed * 4);
   }
@@ -289,7 +291,7 @@ void mapNoiseToLEDsUsingPalette()
 
       uint8_t index = noise[j][i];
       uint8_t bri =   noise[i][j];
-
+	 
       // if this palette is a 'loop', add a slowly-changing base value
       if( colorLoop) { 
         index += ihue;
@@ -332,7 +334,8 @@ void ChangePaletteAndSettingsPeriodically()
   nblendPaletteTowardPalette( currentPalette, targetPalette, maxChanges);
   //uint8_t secondHand = ((millis() / 1000) / HOLD_PALETTES_X_TIMES_AS_LONG) % 60; //not used with webserver
   //static uint8_t lastSecond = 99;                                                 //not used with webserver
-  
+  increaseLedMode();
+
     if (ledMode != 999) {
       switch (ledMode) {
       case  1: all_off(); break;
@@ -440,11 +443,14 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex)
   }
 }
 
-void LedsNoise ()
+void LedsNoise (byte nada,byte nada1)
   {
+	//Serial.print("LedsNoise "); // debug
 
     // Periodically choose a new palette, speed, and scale
   ChangePaletteAndSettingsPeriodically();
+  
+
       // Crossfade current palette slowly toward the target palette
     //
     // Each time that nblendPaletteTowardPalette is called, small changes
@@ -456,10 +462,476 @@ void LedsNoise ()
     //  uint8_t maxChanges = 7;
     //  nblendPaletteTowardPalette( currentPalette, targetPalette, maxChanges);
      // generate noise data
-  fillnoise8a();
+  fillnoise8a(0,0);
+
+  
     // convert the noise data to colors in the LED array
   
   // using the current palette
   mapNoiseToLEDsUsingPalette();
+  LEDS.show();
+  
   }
 
+// animaciones pasadas desde funciones
+
+// 2 oscillators flying arround one ;)
+void Dots1(uint8_t color1, uint8_t color2) {
+	MoveOscillators();
+	//2 lissajous dots red
+	leds[XY(p[0], p[1])] = CHSV(color1, 255, 255);
+	leds[XY(p[2], p[3])] = CHSV(color2, 255, 150);
+	//average of the coordinates in yellow
+	Pixel((p[2] + p[0]) / 2, (p[1] + p[3]) / 2, 50);
+	ShowFrame();
+
+	FastLED.delay(20);
+	HorizontalStream(125);
+}
+
+// x and y based on 3 sine waves
+void Dots2(uint8_t scale, uint8_t nada) {
+	MoveOscillators();
+	Pixel((p[2] + p[0] + p[1]) / 3, (p[1] + p[3] + p[2]) / 3, osci[3]);
+	ShowFrame();
+	FastLED.delay(20);
+	HorizontalStream(scale);
+}
+
+// beautifull but periodic
+void SlowMandala2(byte dim, byte nada) {
+	for (int i = 1; i < 8; i++) {
+		for (int j = 0; j < 16; j++) {
+			MoveOscillators();
+			Pixel(j, i, (osci[0] + osci[1]) / 2);
+			SpiralStream(4, 4, 4, dim);
+			Caleidoscope2();
+			ShowFrame();
+			FastLED.delay(20);
+		}
+	}
+}
+
+// same with a different timing
+void SlowMandala3(byte dim, byte nada) {
+	for (int i = 0; i < 16; i++) {
+		for (int j = 0; j < 16; j++) {
+			MoveOscillators();
+			Pixel(j, j, (osci[0] + osci[1]) / 2);
+			SpiralStream(4, 4, 4, dim);
+			Caleidoscope2();
+			ShowFrame();
+			FastLED.delay(20);
+		}
+	}
+}
+
+// 2 lissajou dots *2 *4
+void Mandala8(byte dim, byte nada) {
+	MoveOscillators();
+	Pixel(p[0] / 2, p[1] / 2, osci[2]);
+	Pixel(p[2] / 2, p[3] / 2, osci[3]);
+	Caleidoscope5();
+	Caleidoscope2();
+	HorizontalStream(dim);
+	ShowFrame();
+}
+
+// colorfull 2 chanel 7 band analyzer
+void MSGEQtest(byte scale, byte nada) {
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		Pixel(i, 16 - left[i] / 64, left[i] / 4);
+	}
+	for (int i = 0; i < 7; i++) {
+		Pixel(8 + i, 16 - right[i] / 64, right[i] / 4);
+	}
+	ShowFrame();
+	VerticalStream(scale);
+}
+
+// 2 frequencies linked to dot emitters in a spiral mandala
+void MSGEQtest2(byte scale, byte color) {
+	ReadAudio();
+	if (left[0]>500) {
+		Pixel(0, 0, 1);
+		Pixel(1, 1, 1);
+	}
+	if (left[2]>200) {
+		Pixel(2, 2, 100);
+	}
+	if (left[6]>200) {
+		Pixel(5, 0, color);
+	}
+	SpiralStream(4, 4, 4, scale);
+	Caleidoscope1();
+	ShowFrame();
+}
+
+// analyzer 2 bars
+void MSGEQtest3(byte scale, byte color) {
+	ReadAudio();
+	for (int i = 0; i < 8; i++) {
+		Pixel(i, 16 - left[0] / 64, 1);
+	}
+	for (int i = 8; i < 16; i++) {
+		Pixel(i, 16 - left[4] / 64, color);
+	}
+	ShowFrame();
+	VerticalStream(scale);
+}
+
+// analyzer x 4 (as showed on youtube)
+void MSGEQtest4(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		Pixel(7 - i, 8 - right[i] / 128, i*hmult);
+	}
+	Caleidoscope2();
+	ShowFrame();
+	DimAll(dim);
+}
+
+// basedrum/snare linked to red/green emitters
+void AudioSpiral(byte color1, byte color2) {
+	MoveOscillators();
+	SpiralStream(7, 7, 7, color1);
+	SpiralStream(4, 4, 4, color2);
+	SpiralStream(11, 11, 3, color2);
+	ReadAudio();
+	if (left[1] > 500) { leds[4, 2] = CHSV(1, 255, 255); }
+	if (left[4] > 500) { leds[XY(random(15), random(15))] = CHSV(100, 255, 255); }
+
+	ShowFrame();
+	DimAll(250);
+}
+
+// one channel 7 band spectrum analyzer (spiral fadeout)
+void MSGEQtest5(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		Line(2 * i, 16 - left[i] / 64, 2 * i, 15, i*hmult);
+		Line(1 + 2 * i, 16 - left[i] / 64, 1 + 2 * i, 15, i*hmult);
+	}
+	ShowFrame();
+	SpiralStream(7, 7, 7, dim);
+}
+
+// classic analyzer, slow falldown
+void MSGEQtest6(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		Line(2 * i, 16 - left[i] / 64, 2 * i, 15, i*hmult);
+		Line(1 + 2 * i, 16 - left[i] / 64, 1 + 2 * i, 15, i*hmult);
+	}
+	ShowFrame();
+	VerticalStream(dim);
+}
+
+// geile Schei?e
+// spectrum mandala, color linked to 160Hz band
+void MSGEQtest7(byte dim, byte hmult) {
+	MoveOscillators();
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		Pixel(7 - i, 8 - right[i] / 128, i*hmult + right[1] / 8);
+	}
+	Caleidoscope5();
+	Caleidoscope1();
+	ShowFrame();
+	DimAll(dim);
+}
+
+// spectrum mandala, color linked to osci
+void MSGEQtest8(byte dim, byte hmult) {
+	MoveOscillators();
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		Pixel(7 - i, 8 - right[i] / 128, i*hmult + osci[1]);
+	}
+	Caleidoscope5();
+	Caleidoscope2();
+	ShowFrame();
+	DimAll(dim);
+}
+
+// falling spectogram
+void MSGEQtest9(byte hmult, byte s) {
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		leds[XY(i * 2, 0)] = CHSV(i*hmult, s, right[i] / 3); // brightness should be divided by 4
+		leds[XY(1 + i * 2, 0)] = CHSV(i*hmult, s, left[i] / 3);
+	}
+	leds[XY(14, 0)] = 0;
+	leds[XY(15, 0)] = 0;
+	ShowFrame();
+	VerticalMove();
+}
+
+// 9 analyzers
+void CopyTest(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 5; i++) {
+		Line(i, 4 - left[i] / 256, i, 4, i*hmult);
+	}
+	Copy(0, 0, 4, 4, 5, 0);
+	Copy(0, 0, 4, 4, 10, 0);
+	Copy(0, 0, 14, 4, 0, 5);
+	Copy(0, 0, 14, 4, 0, 10);
+	ShowFrame();
+	DimAll(dim);
+}
+
+// test scale
+// NOT WORKING as intended YET!
+void CopyTest2(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 5; i++) {
+		Line(i * 2, 4 - left[i] / 128, i * 2, 4, i*hmult);
+	}
+	Scale(0, 0, 4, 4, 7, 7, 15, 15);
+	ShowFrame();
+	DimAll(dim);
+
+}
+
+// line spectogram mandala
+void Audio1(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 5; i++) {
+		Line(3 * i, 16 - left[i] / 64, 3 * (i + 1), 16 - left[i + 1] / 64, 255 - i*hmult);
+	}
+	Caleidoscope4();
+	ShowFrame();
+	DimAll(dim);
+}
+
+// line analyzer with stream
+void Audio2(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 5; i++) {
+		Line(3 * i, 16 - left[i] / 64, 3 * (i + 1), 16 - left[i + 1] / 64, 255 - i*hmult);
+	}
+	ShowFrame();
+	HorizontalStream(dim);
+}
+
+void Audio3(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		leds[XY(6 - i, right[i] / 128)] = CHSV(i*hmult, 255, right[i]);
+	} // brightness should be divided by 4
+	Caleidoscope6();
+	Caleidoscope2();
+	ShowFrame();
+	DimAll(dim);
+}
+
+void Audio4(byte dim, byte hdiv) {
+	ReadAudio();
+	for (int i = 0; i < 5; i++) {
+		Line(3 * i, 8 - left[i] / 128, 3 * (i + 1), 8 - left[i + 1] / 128, i*left[i] / hdiv);
+	}
+	Caleidoscope4();
+	ShowFrame();
+	DimAll(dim);
+}
+
+void CaleidoTest1(byte dim, byte hdiv) {
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		Line(i, left[i] / 256, i, 0, left[i] / hdiv);
+	}
+	RotateTriangle();
+	Caleidoscope2();  //copy + rotate
+	ShowFrame();
+	DimAll(dim);
+}
+
+void CaleidoTest2(byte dim, byte color_ofset) {
+	MoveOscillators();
+	ReadAudio();
+	for (int i = 0; i < 7; i++) {
+		Line(i, left[i] / 200, i, 0, (left[i] / 16) + color_ofset);
+	}
+	MirrorTriangle();
+	Caleidoscope1();  //mirror + rotate
+	ShowFrame();
+	DimAll(dim);
+}
+
+void Audio5(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 5; i++) {
+		Line(
+			3 * i, 8 - left[i] / 128,        // from
+			3 * (i + 1), 8 - left[i + 1] / 128,  // to
+			i * hmult);
+	}                       // color
+	Caleidoscope4();
+	ShowFrame();
+	DimAll(dim);
+}
+
+void Audio6(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 5; i++) {
+		Line(
+			3 * i, 8 - left[i] / 128,        // from
+			3 * (i + 1), 8 - left[i + 1] / 128,  // to
+			i * 10);                         // lolor
+		Line(
+			15 - (3 * i), 7 + left[i] / 128,        // from
+			15 - (3 * (i + 1)), 7 + left[i + 1] / 128,  // to
+			i * hmult);                              // color
+	}
+	ShowFrame();
+	DimAll(dim);
+	//ClearAll();
+}
+
+void NoiseExample1(byte hpow2, byte s) {
+	MoveOscillators();
+	scale2 = 30 + p[1] * 3;
+	x = p[0] * 16;
+	fillnoise8();
+	fillnoise82();
+	for (int i = 0; i < kMatrixWidth; i++) {
+		for (int j = 0; j < kMatrixHeight; j++) {
+			leds[XY(i, j)] =
+				CHSV(noise[i][j] << hpow2, s, (noise2[i][j] + noise[i][j]) / 2);
+		}
+	}
+	ShowFrame();
+}
+
+void NoiseExample2(byte noisez, byte scale) {
+	MoveOscillators();
+	FillNoise(2000 - p[2] * 100, 100, noisez, scale);
+	for (int i = 0; i < p[2]; i++) {
+		for (int j = 0; j < kMatrixHeight; j++) {
+			leds[XY(i, j)] = CRGB(noise[i][j], 0, 0);
+		}
+	}
+	for (int i = 0; i < p[1]; i++) {
+		for (int j = 0; j < kMatrixHeight; j++) {
+			leds[XY(j, i)] += CRGB(0, 0, noise[i][j]);
+		}
+	}
+	ShowFrame();
+	ClearAll();
+}
+
+void NoiseExample3(byte noisez, byte scale) {
+	MoveOscillators();
+	FillNoise(p[1] * 100, p[2] * 100, noisez, scale);
+	for (int i = 0; i < p[1]; i++) {
+		for (int j = 0; j < kMatrixHeight; j++) {
+			leds[XY(i, j)] = CHSV(noise[i][j], 255, 200);
+		}
+	}
+
+	for (int i = 0; i < p[3]; i++) {
+		for (int j = 0; j < kMatrixHeight; j++) {
+			leds[XY(j, i)] += CHSV(128 + noise[i][j], 255, 200);
+		}
+	}
+
+	ShowFrame();
+	ClearAll();
+}
+
+void NoiseExample4(byte noisez, byte scale) {
+	MoveOscillators();
+	FillNoise(100, 100, noisez, scale);
+	for (int i = 0; i < p[0] + 1; i++) {
+		for (int j = 0; j < kMatrixHeight; j++) {
+			leds[XY(i, j)] += CHSV(noise[i][j + p[2]], 255, 255);
+		}
+	}
+	ShowFrame();
+	ClearAll();
+}
+
+void NoiseExample5(byte noisez, byte scale) {
+
+
+	MoveOscillators();
+	ReadAudio();
+	FillNoise(100, 100, noisez, scale);
+
+	for (int i = 0; i < kMatrixWidth; i++) {
+		for (int j = 0; j < left[1] / 64; j++) {
+			leds[XY(i, 15 - j)] = CRGB(0, noise[i][left[1] / 64 - j], 0);
+		}
+	}
+
+	for (int i = 0; i < kMatrixWidth; i++) {
+		for (int j = 0; j < left[5] / 64; j++) {
+			leds[XY(j, i)] += CRGB(noise[i][left[5] / 64 - j], 0, 0);
+		}
+	}
+	ShowFrame();
+	ClearAll();
+}
+
+void NoiseExample6(byte hofset, byte scale) {
+	//MoveOscillators();
+	for (int size = 1; size < scale; size++) {
+		z++;
+
+
+		FillNoise(size, size, z, size);
+
+		for (int i = 0; i < kMatrixWidth; i++) {
+
+			for (int j = 0; j < kMatrixHeight; j++) {
+				yield();
+
+				leds[XY(i, j)] = CHSV(hofset + noise[i][j], 255, 255);
+			}
+		}
+
+
+		ShowFrame();
+		//ClearAll();
+	}
+	for (int size = 200; size > 1; size--) {
+		z++;
+		yield();
+		FillNoise(size, size, z, size);
+		for (int i = 0; i < kMatrixWidth; i++) {
+			for (int j = 0; j < kMatrixHeight; j++) {
+				leds[XY(i, j)] = CHSV(50 + noise[i][j], 255, 255);
+			}
+		}
+		ShowFrame();
+		//ClearAll();
+	}
+}
+
+void NoiseExample7(byte nada, byte scale) {
+	ChangePalettePeriodically();
+	for (int size = 1; size < scale; size++) {
+		yield();
+		z++;
+		FillNoise(size * 3, size * 3, z, size);
+		for (int i = 0; i < kMatrixWidth; i++) {
+			for (int j = 0; j < kMatrixHeight; j++) {
+				leds[XY(i, j)] = ColorFromPalette(currentPalette, noise[i][j], 255, currentBlending);
+			}
+		}
+		ShowFrame();
+	}
+	for (int size = scale; size > 1; size--) {
+		yield();
+		z++;
+		FillNoise(size * 3, size * 3, z, size);
+		for (int i = 0; i < kMatrixWidth; i++) {
+			for (int j = 0; j < kMatrixHeight; j++) {
+				leds[XY(i, j)] = ColorFromPalette(currentPalette, noise[i][j], 255, currentBlending);
+			}
+		}
+		ShowFrame();
+	}
+}

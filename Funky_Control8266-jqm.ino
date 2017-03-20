@@ -83,6 +83,7 @@ TODO:
 
 
 #include <ESP8266WebServer.h>
+#include <FastLED_GFX\FastLED_GFX.h>
 
 
 
@@ -149,7 +150,7 @@ int ledMode = 4;                  // this is the starting palette
 const uint8_t kMatrixWidth  = WIDTH;
 const uint8_t kMatrixHeight = HEIGHT;
 
-#define MAX_DIMENSION ((kMatrixWidth>kMatrixHeight) ? kMatrixWidth : kMatrixHeight)
+#define MAX_DIMENSION ((CUSTOM_WIDTH>CUSTOM_HEIGHT) ? CUSTOM_WIDTH : CUSTOM_HEIGHT)
 
 // The 16 bit version of our coordinates
 static uint16_t x;
@@ -161,13 +162,13 @@ static uint16_t z;
 // use the z-axis for "time".  speed determines how fast time moves forward.  Try
 // 1 for a very slow moving effect, or 60 for something that ends up looking like
 // water.
-uint16_t speed = 20; // speed is set dynamically once we've started up
+uint8_t speed = 20; // speed is set dynamically once we've started up
 
 // Scale determines how far apart the pixels in our noise matrix are.  Try
 // changing these values around to see how it affects the motion of the display.  The
 // higher the value of scale, the more "zoomed out" the noise iwll be.  A value
 // of 1 will be so zoomed in, you'll mostly see solid colors.
-uint16_t scale = 30; // scale is set dynamically once we've started up
+uint8_t scale = 30; // scale is set dynamically once we've started up
 
 // This is the array that we keep our computed noise values in
 uint8_t noise[MAX_DIMENSION][MAX_DIMENSION];
@@ -183,7 +184,7 @@ byte myHue = 33;                    //I am using HSV, the initial settings displ
 byte mySaturation = 168;
 byte myValue = 255;
 String  myrgb = "(0,0,0)";            // color desde websockets color picker
-unsigned int myWhiteLedValue=0;
+unsigned int myparameter1=0;			// usef for speed change on noise effect as a global var
 byte rainbowHue = myHue;            //Using this so the rainbow effect doesn't overwrite the hue set on the website
 
 int flickerTime = random(200, 400);
@@ -206,10 +207,10 @@ unsigned long currentChangeTime = 0;
 
 // the rendering buffer (16*16)
 // do not touch
-CRGB leds[NUM_LEDS];
+CRGB leds[NUM_LEDS]; // matriz render
 
 // your display buffer for your not 16*16 setup
-CRGB leds2[CUSTOM_NUM_LEDS];
+CRGB leds2[CUSTOM_NUM_LEDS]; // matriz real
 CRGBSet ledSet(leds, NUM_LEDS);    //Trying LEDSet from FastLED
 
 CRGB  tempLed[CUSTOM_WIDTH*CUSTOM_HEIGHT];// debug
@@ -227,17 +228,20 @@ byte p[4];
 int left[7];    
 int right[7];
 
-#include "LEDanimations.h"
-#include "LEDWebsockets.h"
+
 
 // noise stuff
 //uint16_t speed = 10;
 //uint16_t scale = 50;
 uint16_t scale2 = 30;
 
-#define MAX_DIMENSION ((kMatrixWidth>kMatrixHeight) ? kMatrixWidth : kMatrixHeight)
+
+
+// #define MAX_DIMENSION ((kMatrixWidth>kMatrixHeight) ? kMatrixWidth : kMatrixHeight)
 //uint8_t noise[MAX_DIMENSION][MAX_DIMENSION];
 uint8_t noise2[MAX_DIMENSION][MAX_DIMENSION];
+
+
 
 static uint16_t x2;
 static uint16_t y2;
@@ -247,6 +251,12 @@ static uint16_t z2;
 TBlendType    currentBlending;
 extern CRGBPalette16 myRedWhiteBluePalette;
 extern const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM;
+
+uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
+
+#include "LEDanimations.h"
+#include "LEDWebsockets.h"
+
 
 // factores para mapear la matriz de 16x16 en la matriz fisica
 uint8_t Fy = kMatrixHeight/CUSTOM_HEIGHT;
@@ -296,16 +306,17 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ NoiseExample2	,	100/*noisez*/	,100 /* scale*/},
 	{ NoiseExample3	,	100/*noisez*/	,100 /* scale*/ },
 	{ NoiseExample4	,	100/*noisez*/	,100 /* scale*/ },
-	{ NoiseExample5	,	100/*noisez*/	,254 /* scale300*/ },// 30
+	{ NoiseExample5	,	100/*noisez*/	,254 /* scale300*/ },// 29
 	{ NoiseExample6	,	50/*hofset*/	,200 /* scale*/ },
 	{ NoiseExample7	,	0/*nada*/		,100 /* scale*/ },
+	{ LedsNoise		,	0/* nada*/		,0	 /* nada1*/ },//32
 
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 	
 };
 
 
-uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
+
 
 
 /*
@@ -363,8 +374,8 @@ pinMode(CLK_PIN, OUTPUT);// led clk  pin as output
   myHue = EEPROM.read(1);
   mySaturation = EEPROM.read(2);
   myValue = EEPROM.read(3);
-  myWhiteLedValue = EEPROM.read(4);
-  myWhiteLedValue += EEPROM.read(5)*256;
+  myparameter1 = EEPROM.read(4);
+  myparameter1 += EEPROM.read(5)*256;
 
   delay(100);                                         //Delay needed, otherwise showcolor doesn't light up all leds or they produce errors after turning on the power supply - you will need to experiment
   LEDS.showColor(CHSV(myHue, mySaturation, myValue));
@@ -409,7 +420,7 @@ EVERY_N_MILLISECONDS(500) {                           // FastLED based non-block
     }
    
 settingsServerTask();
-
+webSocket.loop();                           // handles websockets
 
 
  // AutoRun();
@@ -448,7 +459,7 @@ settingsServerTask();
   // insert a delay to keep the framerate modest
 //  FastLED.delay(1000 / 120); // about sixty FPS
 
-  EVERY_N_SECONDS(5) { nextPattern(); } // change patterns periodically
+  EVERY_N_SECONDS(100) { nextPattern(); } // change patterns periodically
 }
 
 void nextPattern()

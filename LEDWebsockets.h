@@ -15,7 +15,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 USE_SERIAL.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
         
         // send message to client
-        String websocketStatusMessage = "H" + String(myHue) + ",S" + String(mySaturation) + ",V" + String(myValue) + ",W" + String(myWhiteLedValue); //Sends a string with the HSV and white led  values to the client website when the conection gets established
+        String websocketStatusMessage = "H" + String(myHue) + ",S" + String(mySaturation) + ",V" + String(myValue) + ",W" + String(myparameter1); //Sends a string with the HSV and white led  values to the client website when the conection gets established
         webSocket.sendTXT(num, websocketStatusMessage);
         
         String info = ESP.getResetInfo();
@@ -40,6 +40,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 flickerLed = random(0,NUM_LEDS-1);
                 if (myEffect != xVal.toInt()) {   // only do stuff when there was a change
                 myEffect = xVal.toInt();
+				gCurrentPatternNumber = myEffect; // toma el numero de funcion enviada por websocket
                 rainbowHue = myHue;
                // EEPROM.write(0, myEffect);       //stores the variable but needs to be committed to EEPROM before being saved - this happens in the loop
                 lastChangeTime = millis();
@@ -74,12 +75,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 eepromCommitted = false;
                 }
              }
-              if (text.startsWith("e")) {   // white led
+              if (text.startsWith("e")) {   // parametro de efectos
                String xVal = (text.substring(text.indexOf("e") + 1, text.length()));
-                if (myWhiteLedValue != xVal.toInt()) {
-                myWhiteLedValue = xVal.toInt();
-                EEPROM.write(4, myWhiteLedValue&&255);
-                EEPROM.write(5, myWhiteLedValue/256);
+                if (myparameter1 != xVal.toInt()) {
+                myparameter1 = xVal.toInt();
+                EEPROM.write(4, myparameter1&&255);
+                EEPROM.write(5, myparameter1/256);
                 lastChangeTime = millis();
                 eepromCommitted = false;
                 }

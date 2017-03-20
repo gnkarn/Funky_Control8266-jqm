@@ -79,12 +79,22 @@ typedef unsigned char byte;
 extern "C" void __cxa_pure_virtual() {;}
 
 
+typedef long __INTPTR_TYPE__ ;
+typedef long __UINTPTR_TYPE__ ;
+typedef long __SIZE_TYPE__ 	;
+typedef long __PTRDIFF_TYPE__;
+
+
 #include "new"
 #include "Esp.h"
 
 
 #include <arduino.h>
 #include <pins_arduino.h> 
+
+#include "..\generic\Common.h"
+#include "..\generic\pins_arduino.h"
+
 #undef F
 #define F(string_literal) ((const PROGMEM char *)(string_literal))
 #undef PSTR
