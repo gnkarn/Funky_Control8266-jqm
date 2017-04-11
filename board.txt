@@ -1,0 +1,2 @@
+# Funky_Control8266-jqm build property overrides
+#

@@ -45,50 +45,48 @@ mejorado por GNK  2016  -->
                 <!--botones 
                 
                 -->
-                <!-- menu desplegable -->
+                <!-- menu desplegable  el primero lo actualiza JS automaticamente-->
                 <div class="ui-field-contain" data-theme="c">
                     <fieldset data-role="controlgroup">
                         <legend>EFECTOS:</legend>
                         <label for="menu-efectos">Efecto1</label>
                         <select name="menu-efectos" id="menu-efectos" data-native-menu="true" data-icon="info">
-                            <option value="0">Dots1</option>
-                            <option value="1" selected="selected">Dots2</option>
-                            <option value="2">SlowMandala2</option>
-                            <option value="3">SlowMandala3</option>
-                            <option value="4">Mandala8</option>
-                            <option value="5">MSGEQtest</option>
-                            <option value="6">MSGEQtest2</option>
+                            <option value="1">Dots1</option>
+                            <option value="2" selected="selected">Dots2</option>
+                            <option value="3">SlowMandala2</option>
+                            <option value="4">SlowMandala3</option>
+                            <option value="5">Mandala8</option>
+                            <option value="6">MSGEQtest</option>
+                            <option value="7">MSGEQtest2</option>
                             <!-- etc. -->
                         </select>
                         <label for="menu-efectos2">Efectos Audio </label>
                         <select name="menu-efectos2" id="menu-efectos2">
-                            <option value="7">MSGEQtest3</option>
-                            <option value="8" selected="selected">MSGEQtest3</option>
-                            <option value="9">AudioSpiral</option>
-                            <option value="10">MSGEQtest5</option>
-                            <option value="11">MSGEQtest6</option>
-                            <option value="12">MSGEQtest7</option>
-                            <option value="13">MSGEQtest8</option>
-                            <option value="14">MSGEQtest9</option>
-                            <option value="15">CopyTest</option>
-                            <option value="16">CopyTest2</option>
-                            <option value="17">Audio1</option>
-                            <option value="18">Audio2</option>
-                            <option value="19">Audio3</option>
-                            <option value="20">Audio4</option>
-                            <option value="21">CaleidoTest2</option>
-                            <option value="22">CaleidoTest1</option>
-                            <option value="23">Audio5</option>
-                            <option value="24">Audio6</option>
-                            <option value="25">NoiseExample1</option>
-                            <option value="26">NoiseExample2</option>
-                            <option value="27">NoiseExample3</option>
-                            <option value="28">NoiseExample4</option>
-                            <option value="29">NoiseExample5</option>
-                            <option value="30">NoiseExample6</option>
-                            <option value="31">NoiseExample7</option>
-                            <option value="32">LedsNoise</option>
-                            
+                            <option value="8">MSGEQtest3</option>
+                            <option value="9" selected="selected">MSGEQtest3</option>
+                            <option value="10">AudioSpiral</option>
+                            <option value="11">MSGEQtest5</option>
+                            <option value="12">MSGEQtest6</option>
+                            <option value="13">MSGEQtest7</option>
+                            <option value="14">MSGEQtest8</option>
+                            <option value="15">MSGEQtest9</option>
+                            <option value="16">CopyTest</option>
+                            <option value="17">CopyTest2</option>
+                            <option value="18">Audio1</option>
+                            <option value="19">Audio2</option>
+                            <option value="20">Audio3</option>
+                            <option value="21">Audio4</option>
+                            <option value="22">CaleidoTest2</option>
+                            <option value="23">CaleidoTest1</option>
+                            <option value="24">Audio5</option>
+                            <option value="25">Audio6</option>
+                            <option value="26">NoiseExample1</option>
+                            <option value="27">NoiseExample2</option>
+                            <option value="28">NoiseExample3</option>
+                            <option value="29">NoiseExample4</option>
+                            <option value="30">NoiseExample5</option>
+                            <option value="31">NoiseExample6</option>
+                            <option value="32">NoiseExample7</option>
                             <!-- etc. -->
                         </select>
                     </fieldset>
@@ -111,7 +109,7 @@ mejorado por GNK  2016  -->
                 <input type="range" id="slider3-range" value="168" min="0" max="255" step="1" name="sliderd" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider3" />
             </div>
             <div class="ui-field-contain">
-                <label for="slider4-range">Parametro1</label>
+                <label for="slider4-range">WhiteLeds</label>
                 <input type="range" id="slider4-range" value="168" min="0" max="1023" step="1" name="slidere" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider4" />
             </div>
         </div>
@@ -144,7 +142,9 @@ mejorado por GNK  2016  -->
             </div>
         </div>
         <div data-role="footer">
+            <p id="status"> Status : </p>
             <!-->footer </-->
+
         </div>
     </div>
     <script src="js/myjs-body.js"></script>

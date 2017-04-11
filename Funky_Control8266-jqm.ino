@@ -69,6 +69,11 @@ TODO:
 //falta incluir los efectos de ESP8266 FastledNoise
 
 
+
+
+
+#include <ArduinoOTA.h>
+#include <WiFiManager.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <FastLED.h>
@@ -83,9 +88,13 @@ TODO:
 
 
 #include <ESP8266WebServer.h>
-#include <FastLED_GFX\FastLED_GFX.h>
 
 
+#include <FastLED_GFX.h>
+// para integrar MAtrix example-APA102
+#include <LEDMatrix.h>  
+// ver https://github.com/AaronLiddiment/LEDMatrix/wiki
+#include <coordinates.h> // ahora incluido como una libreria
 
 int  ledState = LOW;
 
@@ -140,6 +149,14 @@ const uint8_t HEIGHT = 16;
 // do not touch
 #define NUM_LEDS (WIDTH * HEIGHT)
 #define CUSTOM_NUM_LEDS (CUSTOM_WIDTH * CUSTOM_HEIGHT)
+
+#define MATRIX_WIDTH   20  // Set this negative if physical led 0 is opposite to where you want logical 0
+#define MATRIX_HEIGHT  24  // Set this negative if physical led 0 is opposite to where you want logical 0
+#define MATRIX_TYPE    VERTICAL_ZIGZAG_MATRIX  // See top of LEDMatrix.h for matrix wiring types
+#define MATRIX_SIZE		MATRIX_WIDTH*MATRIX_HEIGHT
+cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> c_leds;
+
+uint8_t h;// color para funciones
 
 // seteo de variables desde ledcontrol8266-matriz-jqm
 // revisar redindancia y luego optimizar
@@ -213,7 +230,7 @@ CRGB leds[NUM_LEDS]; // matriz render
 CRGB leds2[CUSTOM_NUM_LEDS]; // matriz real
 CRGBSet ledSet(leds, NUM_LEDS);    //Trying LEDSet from FastLED
 
-CRGB  tempLed[CUSTOM_WIDTH*CUSTOM_HEIGHT];// debug
+// CRGB  tempLed[CUSTOM_WIDTH*CUSTOM_HEIGHT];// debug eliminado
 
 // the oscillators: linear ramps 0-255
 // modified only by MoveOscillators()
@@ -271,50 +288,51 @@ long Previous_millis=0;
 // passed to each one: ( mark kriesgman demo reel arg2)
 typedef void(*TwoArgumentPattern)(uint8_t arg1, uint8_t arg2);
 typedef struct {
-	TwoArgumentPattern mPattern;
+	TwoArgumentPattern mPattern;	// nombre de la funcion a llamar
+	String mName;					// nombre que se mostrara del efecto
 	uint8_t mArg1;
 	uint8_t mArg2;
 } TwoArgumentPatterWithArgumentValues;
 
 TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
-	{ Dots1			,	1	/*color1 */	, 1 /*color2 */ },
-	{ Dots2			,	125 /*scale*/	, 0 /*no se usa*/},
-	{ SlowMandala2,		127 /*dim*/		, 0 /*no se usa*/},
-	{ SlowMandala3,		127 /*dim*/		, 0 /*no se usa*/},
-	{ Mandala8		,	110 /*dim*/		, 0 /*no se usa*/},
-	{ MSGEQtest		,	120 /* scale*/	, 0 /*no se usa*/ },
-	{ MSGEQtest2	,	127 /*scale*/	, 200 /*color*/},
-	{ MSGEQtest3	,	120 /*scale*/	, 100 /*color*/ },
-	{ MSGEQtest4	,	240 /* dim*/	, 10 /* hmult*/},
-	{ AudioSpiral	,	130 /*color1*/	, 122 /*color*/},
-	{ MSGEQtest5	,	120 /*dim*/		, 10 /*hmult*/},
-	{ MSGEQtest6	,	170 /*dim*/		, 10 /*hmult*/ },
-	{ MSGEQtest7	,	240 /*dim*/		, 10 /*hmult*/ },// revisar
-	{ MSGEQtest8	,	240 /*dim*/		, 10 /*hmult*/ },// revisar
-	{ MSGEQtest9	,	27 /*dim*/		, 255 /*s*/},
-	{ CopyTest		,	200 /* dim*/	, 10 /*hmult*/ },
-	{ CopyTest2		,	200 /* dim*/	, 10 /*hmult*/ },
-	{ Audio1		,	10 /*dim*/		,15 /*hmult*/},
-	{ Audio2		,	120 /*dim*/		,15 /*hmult*/ },
-	{ Audio3		,	255 /*dim*/		,27 /*hmult*/ },
-	{ Audio4		,	12 /*dim*/		,32 /*hdiv*/ },
-	{ CaleidoTest2	,	240 /* dim*/	,150 /* color_ofset*/},
-	{ CaleidoTest1	,	240 /* dim*/	,32 /* hdiv*/ },
-	{ Audio5		,	9 /*dim*/		,30 /* hmult*/},
-	{ Audio6		,	200 /*dim*/		,10 /* hmult*/ },
-	{ NoiseExample1	,	1 /* hpow2*/	,255 /* s*/ },
-	{ NoiseExample2	,	100/*noisez*/	,100 /* scale*/},
-	{ NoiseExample3	,	100/*noisez*/	,100 /* scale*/ },
-	{ NoiseExample4	,	100/*noisez*/	,100 /* scale*/ },
-	{ NoiseExample5	,	100/*noisez*/	,254 /* scale300*/ },// 29
-	{ NoiseExample6	,	50/*hofset*/	,200 /* scale*/ },
-	{ NoiseExample7	,	0/*nada*/		,100 /* scale*/ },
-	{ LedsNoise		,	0/* nada*/		,0	 /* nada1*/ },//32
+	{ Dots1			,"Dots1",		1	/*color1 */	, 1 /*color2 */ },
+	{ Dots2			,"Dots2",		125 /*scale*/	, 0 /*no se usa*/},
+	{ SlowMandala2,	"SlowMandala2",	127 /*dim*/		, 0 /*no se usa*/},
+	{ SlowMandala3,	"SlowMandala3",	127 /*dim*/		, 0 /*no se usa*/},
+	{ Mandala8		,"Mandala8",	110 /*dim*/		, 0 /*no se usa*/},
+	{ MSGEQtest		,"MSGEQtest",	120 /* scale*/	, 0 /*no se usa*/ },
+	{ MSGEQtest2	,"MSGEQtest2",	127 /*scale*/	, 200 /*color*/},
+	{ MSGEQtest3	,"MSGEQtest3",	120 /*scale*/	, 100 /*color*/ },
+	{ MSGEQtest4	,"MSGEQtest4",	240 /* dim*/	, 10 /* hmult*/},
+	{ AudioSpiral	,"AudioSpiral",	130 /*color1*/	, 122 /*color*/},
+	{ MSGEQtest5	,"MSGEQtest5",	120 /*dim*/		, 10 /*hmult*/},
+	{ MSGEQtest6	,"MSGEQtest6",	170 /*dim*/		, 10 /*hmult*/ },
+	{ MSGEQtest7	,"MSGEQtest7",	240 /*dim*/		, 10 /*hmult*/ },// revisar
+	{ MSGEQtest8	,"MSGEQtest8",	240 /*dim*/		, 10 /*hmult*/ },// revisar
+	{ MSGEQtest9	,"MSGEQtest9",	27 /*dim*/		, 255 /*s*/},
+	{ CopyTest		,"CopyTest",	200 /* dim*/	, 10 /*hmult*/ },
+	{ CopyTest2		,"CopyTest2",	200 /* dim*/	, 10 /*hmult*/ },
+	{ Audio1		,"Audio1",		10 /*dim*/		,15 /*hmult*/},
+	{ Audio2		,"Audio2",		120 /*dim*/		,15 /*hmult*/ },
+	{ Audio3		,"Audio3",		255 /*dim*/		,27 /*hmult*/ },
+	{ Audio4		,"Audio4",		12 /*dim*/		,32 /*hdiv*/ },
+	{ CaleidoTest2	,"CaleidoTest2",	240 /* dim*/	,150 /* color_ofset*/},
+	{ CaleidoTest1	,"CaleidoTest1",	240 /* dim*/	,32 /* hdiv*/ },
+	{ Audio5		,"Audio5",		9 /*dim*/		,30 /* hmult*/},
+	{ Audio6		,"Audio6",		200 /*dim*/		,10 /* hmult*/ },
+	{ NoiseExample1	,"NoiseExample1",	1 /* hpow2*/	,255 /* s*/ },
+	{ NoiseExample2	,"NoiseExample2",	100/*noisez*/	,100 /* scale*/},
+	{ NoiseExample3	,"NoiseExample3",	100/*noisez*/	,100 /* scale*/ },
+	{ NoiseExample4	,"NoiseExample4",	100/*noisez*/	,100 /* scale*/ },
+	{ NoiseExample5	,"NoiseExample5",	100/*noisez*/	,254 /* scale300*/ },// 29
+	{ NoiseExample6	,"NoiseExample6",	50/*hofset*/	,200 /* scale*/ },
+	{ NoiseExample7	,"NoiseExample7",	0/*nada*/		,100 /* scale*/ },
+	{ LedsNoise		,"LedsNoise",	0/* nada*/		,0	 /* nada1*/ },//32
 
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 	
 };
-
+const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAndArguments[0]);
 
 
 
@@ -347,7 +365,9 @@ pinMode(CLK_PIN, OUTPUT);// led clk  pin as output
   //FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds2, CUSTOM_NUM_LEDS);
   
     //FastLED.addLeds<APA102,11,13,RGB,DATA_RATE_MHZ(10) >(leds,NUM_LEDS);
-   FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER,DATA_RATE_MHZ(10)>(leds2, CUSTOM_NUM_LEDS).setCorrection(TypicalLEDStrip);
+   //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER,DATA_RATE_MHZ(10)>(leds2, CUSTOM_NUM_LEDS).setCorrection(TypicalLEDStrip);
+
+   LEDS.addLeds<LED_TYPE, DATA_PIN, CLK_PIN, COLOR_ORDER>(c_leds[0], c_leds.Size()).setCorrection(TypicalSMD5050);
 
   FastLED.setBrightness(BRIGHTNESS);
   set_max_power_in_volts_and_milliamps(5, MILLI_AMPERE);
@@ -398,6 +418,32 @@ pinMode(CLK_PIN, OUTPUT);// led clk  pin as output
   startSettingsServer();
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
+
+ /* ----------------------------------------
+  drawEstrella(10, 12, 2, 0, 10, CHSV(HUE_RED, 255, 255));
+  blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
+
+  delay(2000);
+  FastLED.clear(true);
+  for (uint16_t i = 0; i <= 1024; i++)
+  {
+	  //DrawVentilador(10, 12, 5, i, CHSV(0, 255, 255));
+	  drawLineByAngle(10, 12, i, 0, 7, CHSV(i, 255, 255));
+	  drawLineByAngle(10, 12, i + 128, 0, 7, CHSV(i, 255, 255));
+	  FastLED.show();
+	  FastLED.delay(2);
+	  fadeToBlackBy(c_leds[0], 480, 32);
+  }
+  for (uint16_t i = 0; i <= 5000; i++)
+  {
+	  circleBeat();
+	  FastLED.show();
+	  FastLED.delay(1);
+	  fadeToBlackBy(c_leds[0], 480, 32);
+  }
+  */
+
+  // ---------------------------------
 
   Serial.println(" fin Setup ");
 
@@ -465,7 +511,7 @@ webSocket.loop();                           // handles websockets
 void nextPattern()
 {
 	// add one to the current pattern number, and wrap around at the end
-	const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAndArguments[0]);
+	//const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAndArguments[0]);
 	gCurrentPatternNumber = (gCurrentPatternNumber + 1) % numberOfPatterns;
 	Serial.print("funcion : \t");
 	Serial.println(gCurrentPatternNumber);

@@ -3,8 +3,8 @@
 -------------------------------------------------------------------
 Basic Helper functions:
 
-XY                  translate 2 dimensional coordinates into an index
-Line                draw a line
+XY_Chico                  translate 2 dimensional coordinates into an index
+BresenhamLine       draw a line
 Pixel               draw a pixel
 ClearAll            empty the screenbuffer
 MoveOscillators     increment osci[] and calculate p[]=sin8(osci)
@@ -18,7 +18,7 @@ ReadAudio           get data from MSGEQ7 into left[7] and right[7]
 // finds the right index for a S shaped matrix
 // para la matriz de height width
 
-int XY(int x, int y) {
+int XY_Chico(int x, int y) {
 	if (y > HEIGHT) {
 		y = HEIGHT;
 	}
@@ -55,10 +55,53 @@ int XY(int x, int y) {
 	}
 }
 
+
+// translates from x, y into an index into the LED array and
+// finds the right index for a S shaped matrix
+// para la matriz de height width
+//NOTE: if i use cled class, this conversion is not needed
+// es usado en 
+uint16_t XY(uint8_t x, uint8_t y) {
+	if (y > HEIGHT) {
+		y = HEIGHT;
+	}
+	if (y < 0) {
+		y = 0;
+	}
+	if (x > WIDTH) {
+		x = WIDTH;
+	}
+	if (x < 0) {
+		x = 0;
+	}
+	// for a serpentine layout reverse every 2nd column:
+	{
+		uint16_t i;
+
+		if (MATRIX_TYPE != VERTICAL_ZIGZAG_MATRIX) {
+			i = (x * HEIGHT) + y;
+		}
+
+		if (MATRIX_TYPE == VERTICAL_ZIGZAG_MATRIX) {
+			if (x & 0x01) {
+				// Odd rows run backwards
+				uint8_t reverseY = (HEIGHT - 1) - y;
+				i = (x * HEIGHT) + reverseY;
+			}
+			else {
+				// Even rows run forwards
+				i = (x * HEIGHT) + y;
+			}
+		}
+
+		return i;
+	}
+}
+
 // translates from x, y into an index into the LED array and
 // finds the right index for a S shaped matrix
 // para la matriz custom
-
+/*
 int XY2(int x, int y) {
 	if (y > CUSTOM_HEIGHT) {
 		y = CUSTOM_HEIGHT;
@@ -96,14 +139,15 @@ int XY2(int x, int y) {
 	}
 }
 
+*/
 //*************************************************
 // Bresenham line algorythm based on 2 coordinates
-void Line(int x0, int y0, int x1, int y1, byte color) {
+void BresenhamLine(int x0, int y0, int x1, int y1, byte color) {
 	int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
 	int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
 	int err = dx + dy, e2;
 	for (;;) {
-		leds[XY(x0, y0)] = CHSV(color, 255, 255);
+		leds[XY_Chico(x0, y0)] = CHSV(color, 255, 255);
 		if (x0 == x1 && y0 == y1) break;
 		e2 = 2 * err;
 		if (e2 > dy) {
@@ -119,7 +163,7 @@ void Line(int x0, int y0, int x1, int y1, byte color) {
 
 // write one pixel with HSV color to coordinates
 void Pixel(int x, int y, byte color) {
-	leds[XY(x, y)] = CHSV(color, 255, 255);
+	leds[XY_Chico(x, y)] = CHSV(color, 255, 255);
 }
 
 // delete the screenbuffer
@@ -203,20 +247,20 @@ void DimAll(byte value)
 void SpiralStream(int x, int y, int r, byte dim) {
 	for (int d = r; d >= 0; d--) {                // from the outside to the inside
 		for (int i = x - d; i <= x + d; i++) {
-			leds[XY(i, y - d)] += leds[XY(i + 1, y - d)];   // lowest row to the right
-			leds[XY(i, y - d)].nscale8(dim);
+			leds[XY_Chico(i, y - d)] += leds[XY_Chico(i + 1, y - d)];   // lowest row to the right
+			leds[XY_Chico(i, y - d)].nscale8(dim);
 		}
 		for (int i = y - d; i <= y + d; i++) {
-			leds[XY(x + d, i)] += leds[XY(x + d, i + 1)];   // right colum up
-			leds[XY(x + d, i)].nscale8(dim);
+			leds[XY_Chico(x + d, i)] += leds[XY_Chico(x + d, i + 1)];   // right colum up
+			leds[XY_Chico(x + d, i)].nscale8(dim);
 		}
 		for (int i = x + d; i >= x - d; i--) {
-			leds[XY(i, y + d)] += leds[XY(i - 1, y + d)];   // upper row to the left
-			leds[XY(i, y + d)].nscale8(dim);
+			leds[XY_Chico(i, y + d)] += leds[XY_Chico(i - 1, y + d)];   // upper row to the left
+			leds[XY_Chico(i, y + d)].nscale8(dim);
 		}
 		for (int i = y + d; i >= y - d; i--) {
-			leds[XY(x - d, i)] += leds[XY(x - d, i - 1)];   // left colum down
-			leds[XY(x - d, i)].nscale8(dim);
+			leds[XY_Chico(x - d, i)] += leds[XY_Chico(x - d, i - 1)];   // left colum down
+			leds[XY_Chico(x - d, i)].nscale8(dim);
 		}
 	}
 }
@@ -226,12 +270,12 @@ void HorizontalStream(byte scale)
 {
 	for (int x = 1; x < WIDTH; x++) {
 		for (int y = 0; y < HEIGHT; y++) {
-			leds[XY(x, y)] += leds[XY(x - 1, y)];
-			leds[XY(x, y)].nscale8(scale);
+			leds[XY_Chico(x, y)] += leds[XY_Chico(x - 1, y)];
+			leds[XY_Chico(x, y)].nscale8(scale);
 		}
 	}
 	for (int y = 0; y < HEIGHT; y++)
-		leds[XY(0, y)].nscale8(scale);
+		leds[XY_Chico(0, y)].nscale8(scale);
 }
 
 // give it a linear tail downwards
@@ -239,19 +283,19 @@ void VerticalStream(byte scale)
 {
 	for (int x = 0; x < WIDTH; x++) {
 		for (int y = 1; y < HEIGHT; y++) {
-			leds[XY(x, y)] += leds[XY(x, y - 1)];
-			leds[XY(x, y)].nscale8(scale);
+			leds[XY_Chico(x, y)] += leds[XY_Chico(x, y - 1)];
+			leds[XY_Chico(x, y)].nscale8(scale);
 		}
 	}
 	for (int x = 0; x < WIDTH; x++)
-		leds[XY(x, 0)].nscale8(scale);
+		leds[XY_Chico(x, 0)].nscale8(scale);
 }
 
 // just move everything one line down
 void VerticalMove() {
 	for (int y = 15; y > 0; y--) {
 		for (int x = 0; x < 16; x++) {
-			leds[XY(x, y)] = leds[XY(x, y - 1)];
+			leds[XY_Chico(x, y)] = leds[XY_Chico(x, y - 1)];
 		}
 	}
 }
@@ -261,7 +305,7 @@ void VerticalMove() {
 void Copy(byte x0, byte y0, byte x1, byte y1, byte x2, byte y2) {
 	for (int y = y0; y < y1 + 1; y++) {
 		for (int x = x0; x < x1 + 1; x++) {
-			leds[XY(x + x2 - x0, y + y2 - y0)] = leds[XY(x, y)];
+			leds[XY_Chico(x + x2 - x0, y + y2 - y0)] = leds[XY_Chico(x, y)];
 		}
 	}
 }
@@ -270,7 +314,7 @@ void Copy(byte x0, byte y0, byte x1, byte y1, byte x2, byte y2) {
 void RotateTriangle() {
 	for (int x = 1; x < 8; x++) {
 		for (int y = 0; y<x; y++) {
-			leds[XY(x, 7 - y)] = leds[XY(7 - x, y)];
+			leds[XY_Chico(x, 7 - y)] = leds[XY_Chico(7 - x, y)];
 		}
 	}
 }
@@ -279,7 +323,7 @@ void RotateTriangle() {
 void MirrorTriangle() {
 	for (int x = 1; x < 8; x++) {
 		for (int y = 0; y<x; y++) {
-			leds[XY(7 - y, x)] = leds[XY(7 - x, y)];
+			leds[XY_Chico(7 - y, x)] = leds[XY_Chico(7 - x, y)];
 		}
 	}
 }
@@ -431,9 +475,9 @@ y
 void Caleidoscope1() {
 	for (int x = 0; x < WIDTH / 2; x++) {
 		for (int y = 0; y < HEIGHT / 2; y++) {
-			leds[XY(WIDTH - 1 - x, y)] = leds[XY(x, y)];              // copy to A
-			leds[XY(x, HEIGHT - 1 - y)] = leds[XY(x, y)];             // copy to B
-			leds[XY(WIDTH - 1 - x, HEIGHT - 1 - y)] = leds[XY(x, y)]; // copy to C
+			leds[XY_Chico(WIDTH - 1 - x, y)] = leds[XY_Chico(x, y)];              // copy to A
+			leds[XY_Chico(x, HEIGHT - 1 - y)] = leds[XY_Chico(x, y)];             // copy to B
+			leds[XY_Chico(WIDTH - 1 - x, HEIGHT - 1 - y)] = leds[XY_Chico(x, y)]; // copy to C
 		}
 	}
 }
@@ -454,9 +498,9 @@ y
 void Caleidoscope2() {
 	for (int x = 0; x < WIDTH / 2; x++) {
 		for (int y = 0; y < HEIGHT / 2; y++) {
-			leds[XY(WIDTH - 1 - x, y)] = leds[XY(y, x)];    // rotate to A
-			leds[XY(WIDTH - 1 - x, HEIGHT - 1 - y)] = leds[XY(x, y)];    // rotate to B
-			leds[XY(x, HEIGHT - 1 - y)] = leds[XY(y, x)];    // rotate to C
+			leds[XY_Chico(WIDTH - 1 - x, y)] = leds[XY_Chico(y, x)];    // rotate to A
+			leds[XY_Chico(WIDTH - 1 - x, HEIGHT - 1 - y)] = leds[XY_Chico(x, y)];    // rotate to B
+			leds[XY_Chico(x, HEIGHT - 1 - y)] = leds[XY_Chico(y, x)];    // rotate to C
 		}
 	}
 }
@@ -465,9 +509,9 @@ void Caleidoscope2() {
 void Caleidoscope3() {
 	for (int x = 0; x < WIDTH / 2; x++) {
 		for (int y = 0; y < HEIGHT / 2; y++) {
-			leds[XY(WIDTH - 1 - x, y)] += leds[XY(y, x)];    // rotate to A
-			leds[XY(WIDTH - 1 - x, HEIGHT - 1 - y)] += leds[XY(x, y)];    // rotate to B
-			leds[XY(x, HEIGHT - 1 - y)] += leds[XY(y, x)];    // rotate to C
+			leds[XY_Chico(WIDTH - 1 - x, y)] += leds[XY_Chico(y, x)];    // rotate to A
+			leds[XY_Chico(WIDTH - 1 - x, HEIGHT - 1 - y)] += leds[XY_Chico(x, y)];    // rotate to B
+			leds[XY_Chico(x, HEIGHT - 1 - y)] += leds[XY_Chico(y, x)];    // rotate to C
 		}
 	}
 }
@@ -476,9 +520,9 @@ void Caleidoscope3() {
 void Caleidoscope4() {
 	for (int x = 0; x < WIDTH; x++) {
 		for (int y = 0; y < HEIGHT; y++) {
-			leds[XY(WIDTH - 1 - x, y)] += leds[XY(y, x)];    // rotate to A
-			leds[XY(WIDTH - 1 - x, HEIGHT - 1 - y)] += leds[XY(x, y)];    // rotate to B
-			leds[XY(x, HEIGHT - 1 - y)] += leds[XY(y, x)];    // rotate to C
+			leds[XY_Chico(WIDTH - 1 - x, y)] += leds[XY_Chico(y, x)];    // rotate to A
+			leds[XY_Chico(WIDTH - 1 - x, HEIGHT - 1 - y)] += leds[XY_Chico(x, y)];    // rotate to B
+			leds[XY_Chico(x, HEIGHT - 1 - y)] += leds[XY_Chico(y, x)];    // rotate to C
 		}
 	}
 }
@@ -487,60 +531,58 @@ void Caleidoscope4() {
 // (crappy code)
 void Caleidoscope5() {
 	for (int x = 1; x < 8; x++) {
-		leds[XY(7 - x, 7)] += leds[XY(x, 0)];
+		leds[XY_Chico(7 - x, 7)] += leds[XY_Chico(x, 0)];
 	} //a
 	for (int x = 2; x < 8; x++) {
-		leds[XY(7 - x, 6)] += leds[XY(x, 1)];
+		leds[XY_Chico(7 - x, 6)] += leds[XY_Chico(x, 1)];
 	} //b
 	for (int x = 3; x < 8; x++) {
-		leds[XY(7 - x, 5)] += leds[XY(x, 2)];
+		leds[XY_Chico(7 - x, 5)] += leds[XY_Chico(x, 2)];
 	} //c
 	for (int x = 4; x < 8; x++) {
-		leds[XY(7 - x, 4)] += leds[XY(x, 3)];
+		leds[XY_Chico(7 - x, 4)] += leds[XY_Chico(x, 3)];
 	} //d
 	for (int x = 5; x < 8; x++) {
-		leds[XY(7 - x, 3)] += leds[XY(x, 4)];
+		leds[XY_Chico(7 - x, 3)] += leds[XY_Chico(x, 4)];
 	} //e
 	for (int x = 6; x < 8; x++) {
-		leds[XY(7 - x, 2)] += leds[XY(x, 5)];
+		leds[XY_Chico(7 - x, 2)] += leds[XY_Chico(x, 5)];
 	} //f
 	for (int x = 7; x < 8; x++) {
-		leds[XY(7 - x, 1)] += leds[XY(x, 6)];
+		leds[XY_Chico(7 - x, 1)] += leds[XY_Chico(x, 6)];
 	} //g
 }
-
 
 void Caleidoscope6() {
 	for (int x = 1; x < 8; x++) {
-		leds[XY(7 - x, 7)] = leds[XY(x, 0)];
+		leds[XY_Chico(7 - x, 7)] = leds[XY_Chico(x, 0)];
 	} //a
 	for (int x = 2; x < 8; x++) {
-		leds[XY(7 - x, 6)] = leds[XY(x, 1)];
+		leds[XY_Chico(7 - x, 6)] = leds[XY_Chico(x, 1)];
 	} //b
 	for (int x = 3; x < 8; x++) {
-		leds[XY(7 - x, 5)] = leds[XY(x, 2)];
+		leds[XY_Chico(7 - x, 5)] = leds[XY_Chico(x, 2)];
 	} //c
 	for (int x = 4; x < 8; x++) {
-		leds[XY(7 - x, 4)] = leds[XY(x, 3)];
+		leds[XY_Chico(7 - x, 4)] = leds[XY_Chico(x, 3)];
 	} //d
 	for (int x = 5; x < 8; x++) {
-		leds[XY(7 - x, 3)] = leds[XY(x, 4)];
+		leds[XY_Chico(7 - x, 3)] = leds[XY_Chico(x, 4)];
 	} //e
 	for (int x = 6; x < 8; x++) {
-		leds[XY(7 - x, 2)] = leds[XY(x, 5)];
+		leds[XY_Chico(7 - x, 2)] = leds[XY_Chico(x, 5)];
 	} //f
 	for (int x = 7; x < 8; x++) {
-		leds[XY(7 - x, 1)] = leds[XY(x, 6)];
+		leds[XY_Chico(7 - x, 1)] = leds[XY_Chico(x, 6)];
 	} //g
 }
-
 
 // rechtangle 0-1 -> 2-3
 // NOT WORKING as intended YET!
 void Scale(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3) {
 	for (int y = y2; y < y3 + 1; y++) {
 		for (int x = x2; x < x3 + 1; x++) {
-			leds[XY(x, y)] = leds[XY(
+			leds[XY_Chico(x, y)] = leds[XY_Chico(
 				x0 + ((x * (x1 - x0)) / (x3 - x1)),
 				y0 + ((y * (y1 - y0)) / (y3 - y1)))];
 		}
@@ -562,31 +604,14 @@ Fx = kMatrixWidth/CUSTOM_WIDTH;
 // describe your matrix layout here:
 // P.S. If you use a 8*8 just remove the */ and /*
 void RenderCustomMatrix() {
-	/* conversion original reemplazada x resizePixels
-	for(int x = 0; x < CUSTOM_WIDTH; x++) {
-	for(int y = 0; y < CUSTOM_HEIGHT; y++) {
-	// position in the custom array LO HAGO DE A DOS PUES POR CADA LED FISICO HAY DOS LEDS SIMULADOS
-
-	leds2[XY2(x,y)]=leds[XY((x*kMatrixWidth)/CUSTOM_WIDTH,(y*kMatrixHeight)/CUSTOM_HEIGHT)]; // 2 is the relation between heith of logical and phisical matrix , y cada valor en la columna lo saco como promedio  de los 2 pixels verticales
-
-	// para ,apear la matriz de 16*16 en una matriz de 30x8 , repito un punto del eje x
-	// y en el eje y interpolo 2 filas generando el promedio de ambas
-	// OJO esta conversion es solo valida desde una matrix de 16x16 a una de 30x8
-	// falta hacerla generica
-
-	}
-	}
-	*/
+	
 	//    resizePixels(leds, int w1, int h1, int w2, int h2) 
-	resizePixels(leds, 16, 16, 20, 24); // hacer flexible 
+	resizePixels(leds, WIDTH, HEIGHT, CUSTOM_WIDTH, CUSTOM_HEIGHT); // hacer flexible 
+
 	// Copy  led colors from leds[src .. src+9] to leds[dest .. dest+9]
 	// memmove( &leds[dest], &leds[src], 10 * sizeof( CRGB) );
-
-	memmove8(&leds2[0], &tempLed[0], 480 * sizeof(CRGB));
-	// for(int i = 0; i < CUSTOM_NUM_LEDS; i++) {      
-	//leds2[i]= PixelBuffer[i] ;
-	// }
-	//Serial.println(millis()); // debug
+	//memmove8(&leds2[0], &tempLed[0], CUSTOM_NUM_LEDS * sizeof(CRGB)); // eliminado paso directamente a leds2 sin templed
+	
 }
 
 //*** Prueba de matriz 
@@ -603,11 +628,9 @@ void Prueba() {
 	for (int x = 0; x < CUSTOM_WIDTH; x++) {
 		for (int y = 0; y < CUSTOM_HEIGHT; y++) {
 			// position in the custom array LO HAGO DE A DOS PUES POR CADA LED FISICO HAY DOS LEDS SIMULADOS
-
-			leds2[XY2(x, y)] = CRGB::White;
+			c_leds(x, y) = CRGB::White;
 			FastLED.show();
-			fadeToBlackBy(leds2, CUSTOM_NUM_LEDS, 20);
-
+			fadeToBlackBy(c_leds[0], CUSTOM_NUM_LEDS, 20);
 		}
 
 	}
@@ -627,8 +650,6 @@ void ShowFrame() {
 
 }
 
-
-
 void fillnoise8() {
 	for (int i = 0; i < MAX_DIMENSION; i++) {
 		int ioffset = scale * i;
@@ -640,7 +661,6 @@ void fillnoise8() {
 	y += speed;
 	//z += 2;
 }
-
 
 void fillnoise82() {
 	for (int i = 0; i < MAX_DIMENSION; i++) {
@@ -664,12 +684,10 @@ void FillNoise(uint16_t x, uint16_t y, uint16_t z, uint16_t scale) {
 	}
 }
 
-
 void SpeedTest() {
 	ReadAudio();
 	ShowFrame();
 }
-
 
 void ReadAudio2() {
 	digitalWrite(MSGEQ7_RESET_PIN, HIGH);
@@ -809,7 +827,7 @@ void NoiseExample8() {
 	FillNoise(x * 3, x * 3, z, sin8(x) >> 1);
 	for (int i = 0; i < kMatrixWidth; i++) {
 		for (int j = 0; j < kMatrixHeight; j++) {
-			leds[XY(i, j)] = ColorFromPalette(currentPalette, noise[i][j], 255, currentBlending);
+			leds[XY_Chico(i, j)] = ColorFromPalette(currentPalette, noise[i][j], 255, currentBlending);
 		}
 	}
 	ShowFrame();
@@ -819,18 +837,16 @@ void NoiseExample8() {
 // CRGB* resizePixels(CRGB* pixels, int w1, int h1, int w2, int h2) {
 // transforma cualquier matriz de tama�o w1 h1 a otra de w2 h2 .
 // *********************************************************************
-
 void resizePixels(CRGB* pixels, int w1, int h1, int w2, int h2) {
 	//	CRGB * temp; // codigo original no consegui que funciones con los punteros
 	//	temp = new CRGB[w2 * h2];
 	double x_ratio = w1 / (double)w2;
 	double y_ratio = h1 / (double)h2;
 	double px, py;
-	//Serial.print(millis());// debug
-	//Serial.println("in ");// debug
+	
 	for (int i = 0; i<h2; i++) {
 		for (int j = 0; j<w2; j++) {
-			px = floor(j*x_ratio);
+			px = floor(j*x_ratio); // Round down value
 			py = floor(i*y_ratio);
 			/* Serial.print("px ");
 			Serial.print(px);
@@ -844,12 +860,11 @@ void resizePixels(CRGB* pixels, int w1, int h1, int w2, int h2) {
 			Serial.println(",");
 			*/
 			//temp[(i*w2) + j] = pixels[(int)((py*w1) + px)];
-			tempLed[XY2(j, i)] = pixels[(int)(XY(px, py))];
-
+			c_leds(j,i) = pixels[(int)(XY_Chico(px, py))]; // antes templed
 		}
 	}
 	//Serial.print("out ");// debug
-	//	return temp;
+	
 	return;
 
 }
@@ -862,4 +877,371 @@ void increaseLedMode()//two colors
 }
 
 
+void drawLineByAngle(uint8_t x, uint8_t y, uint16_t angle, uint8_t length, CHSV  color)
+{
+	float p_angle = angle, p_length = length, p_start = 0, x1, y1;
+	//#define PI 3.14159265
 
+	/*leds.DrawLine(
+	x,
+	y,
+	x + length*cos8(angle ),
+	y + length*sin8_C(angle ), color);// version de 8 bits
+	*/
+	x1 = x + ((p_start + p_length)*cos(p_angle*PI / 180));
+	y1 = y + ((p_start + p_length)*sin(p_angle*PI / 180));
+
+	c_leds.DrawLine(
+
+		uint8_t(x + (p_start*(cos(p_angle*PI / 180)))),
+		uint8_t(y + (p_start*(sin(p_angle*PI / 180)))),
+		uint16_t(x1),
+		uint16_t(y1), color
+	);
+}
+
+void drawLineByAngle(uint8_t xc, uint8_t yc, uint8_t angle, uint8_t start, uint8_t length, CHSV color)
+{
+	//float p_angle = angle, p_length = length, p_start = start,
+
+	Coordinates point = Coordinates();
+
+
+	point.fromPolar(start + length, angle, xc, yc); // x + ((p_start + p_length)*(1+cos(p_angle))/2);
+													//y1 = y + ((p_start + p_length)*(1+sin(p_angle))/2);
+	uint8_t x1 = point.getX(); // coordenadas punto final
+	uint8_t y1 = point.getY();
+	point.fromPolar(start, angle, xc, yc);
+	DrawWuLine(
+		point.getX(),
+		point.getY(),
+		x1,
+		y1, color, 255, 8);
+	//Serial.print("x1: "); Serial.print(x1); Serial.print("y1: "); Serial.println(y1);// debug
+
+}
+
+void DrawWuLine(uint8_t X0, uint8_t Y0, uint8_t X1, uint8_t Y1,
+	CHSV BaseColor, uint8_t NumLevels, uint8_t  IntensityBits)
+{
+	uint8_t IntensityShift, ErrorAdj, ErrorAcc;
+	uint8_t ErrorAccTemp, Weighting, WeightingComplementMask;
+	uint8_t DeltaX, DeltaY, Temp, XDir1, XDir2;
+
+	/* Make sure the line runs top to bottom */
+	if (Y0 > Y1) {
+		Temp = Y0; Y0 = Y1; Y1 = Temp;
+		Temp = X0; X0 = X1; X1 = Temp;
+	}
+	/* Draw the initial pixel, which is always exactly intersected by
+	the line and so needs no weighting */
+	DrawPixel(X0, Y0, BaseColor);
+	if (X1 >= X0) {
+		DeltaX = X1 - X0;
+		XDir1 = 1; XDir2 = 0;//pendiente positiva
+							 //Serial.print("inicial x1 "); Serial.println(X1);// debug
+							 //Serial.print("; inicial y1 "); Serial.println(Y1);// debug
+
+	}
+
+	else {
+		XDir1 = 0; XDir2 = 1;	//pendiente negativa XDir = -1  because i dont use negative numbers;
+		DeltaX = X0 - X1; /* make DeltaX positive */
+	}
+	/* Special-case horizontal, vertical, and diagonal lines, which
+	require no weighting because they go right through the center of
+	every pixel */
+
+	DeltaY = Y1 - Y0;
+
+
+	if (DeltaY == 0) {
+		/* Horizontal line */
+
+
+		while (DeltaX-- != 0) {
+			X0 += XDir1 - XDir2;
+			DrawPixel(X0, Y0, BaseColor);
+		}
+		return;
+	}
+	if (DeltaX == 0) {
+		/* Vertical line */
+		do {
+			Y0++;
+			DrawPixel(X0, Y0, BaseColor);
+		} while (--DeltaY != 0);
+		return;
+	}
+	if (DeltaX == DeltaY) {
+		/* Diagonal line */
+		do {
+			X0 += XDir1 - XDir2;
+			Y0++;
+			DrawPixel(X0, Y0, BaseColor);
+		} while (--DeltaY != 0);
+		return;
+	}
+
+	/* Line is not horizontal, diagonal, or vertical */
+
+
+	ErrorAcc = 0;  /* initialize the line error accumulator to 0 */
+				   /* # of bits by which to shift ErrorAcc to get intensity level */
+	IntensityShift = 16 - IntensityBits;
+	/* Mask used to flip all bits in an intensity weighting, producing the
+	result (1 - intensity weighting) */
+	WeightingComplementMask = NumLevels - 1;
+	/* Is this an X-major or Y-major line? */
+	if (DeltaY > DeltaX) {
+		/* Y-major line; calculate 8-bit fixed-point fractional part of a
+		pixel that X advances each time Y advances 1 pixel, truncating the
+		result so that we won't overrun the endpoint along the X axis */
+		ErrorAdj = ((int)DeltaX << 8) / (uint8_t)DeltaY;
+		/* Draw all pixels other than the first and last */
+		while (--DeltaY) {
+			ErrorAccTemp = ErrorAcc;   /* remember currrent accumulated error */
+			ErrorAcc = ErrorAcc + ErrorAdj;/* calculate error for next pixel */
+
+			if (ErrorAcc <= ErrorAccTemp) {
+				/* The error accumulator turned over ( saturated to max 255), so advance the X coord */
+				X0 += XDir1 - XDir2;
+			}
+			Y0++; /* Y-major, so always advance Y */
+				  /* The IntensityBits most significant bits of ErrorAcc give us the
+				  intensity weighting for this pixel, and the complement of the
+				  weighting for the paired pixel */
+			Weighting = ErrorAcc;
+			DrawPixel(X0, Y0, CHSV(BaseColor.hue, 255, ErrorAcc));
+
+			//Serial.print("pix1 x0 "); Serial.print(X0); Serial.print("; pix1 y0  "); Serial.println(Y0);		// debug
+
+
+			DrawPixel(X0 + XDir1 - XDir2, Y0, CHSV(BaseColor.hue, 255, 255 - ErrorAcc));
+
+			//Serial.print("xdir1  "); Serial.print((XDir1)); Serial.print("; xdir2  "); Serial.println((XDir2));// debug
+		}
+		/* Draw the final pixel, which is
+		always exactly intersected by the line
+		and so needs no weighting */
+		DrawPixel(X1, Y1, CHSV(BaseColor.hue, 255, 255));
+		return;
+	}
+	/* It's an X-major line; calculate 16-bit fixed-point fractional part of a
+	pixel that Y advances each time X advances 1 pixel, truncating the
+	result to avoid overrunning the endpoint along the X axis */
+	ErrorAdj = ((int)DeltaY << 8) / (uint8_t)DeltaX;
+
+	//Serial.print("error  "); Serial.println(ErrorAdj);// debug
+
+	/* Draw all pixels other than the first and last */
+	while (--DeltaX) {
+		ErrorAccTemp = ErrorAcc;   /* remember currrent accumulated error */
+								   //ErrorAcc=qadd8(ErrorAcc,ErrorAdj);      /* calculate error for next pixel */
+		ErrorAcc = ErrorAcc + ErrorAdj;
+		//if (ErrorAcc ==255) {
+		if (ErrorAcc <= ErrorAccTemp) {
+			/* The error accumulator turned over, so advance the Y coord */
+			Y0++;
+		}
+		X0 += XDir1 - XDir2; /* X-major, so always advance X */
+							 /* The IntensityBits most significant bits of ErrorAcc give us the
+							 intensity weighting for this pixel, and the complement of the
+							 weighting for the paired pixel */
+		Weighting = ErrorAcc >> IntensityShift;
+		DrawPixel(X0, Y0, CHSV(BaseColor.hue, 255, 255 - ErrorAcc));
+		DrawPixel(X0, Y0 + 1, CHSV(BaseColor.hue, 255, ErrorAcc));
+
+		//Serial.print("x0  "); Serial.print(X0); Serial.print(" y0  "); Serial.print(Y0); Serial.print(" err "); Serial.println(ErrorAcc);// debug
+	}
+	/* Draw the final pixel, which is always exactly intersected by the line
+	and so needs no weighting */
+	DrawPixel(X1, Y1, CHSV(BaseColor.hue, 255, 255));
+}
+
+void DrawPixel(uint8_t X0, uint8_t Y0, CHSV pixel)
+{
+	c_leds(X0, Y0) = pixel;
+
+
+}
+
+
+class Circulo {
+	// Class Member Variables
+	// These are initialized at startup
+private:
+	unsigned long mpreviousMillis, mupdatet; 	// will store last time LED was updated
+	uint8_t mcrad, mcrpm, mcxc, mcyc;
+	bool mcdir;
+	uint8_t mcx, mcy;// pixel coordinates
+	uint16_t  mcrev;
+	CHSV mccolor;
+	uint8_t mcphi; // angulo del pixel
+
+public:
+	// cxc,cyc,crpm,crev,crad,ccolor,cdir : center coords, rpm, num of revs, radious , color ,dir
+	// Constructor - creates a Circulo  
+	// and initializes the member variables and state
+
+	Circulo(uint8_t cxc, uint8_t cyc, uint16_t crpm, uint8_t crev, uint8_t crad, CHSV ccolor, bool cdir)
+	{
+		mcxc = cxc;
+		mcyc = cyc;
+		mcrpm = crpm;
+		mcrev = crev;
+		mcrad = crad;
+		mcphi = 0;
+		mccolor = ccolor;
+		mcdir = cdir;// 0 horario 1 anti
+		mpreviousMillis = 0;  	// will store last time LED was updated
+		mupdatet = 256 / (crpm); // time in msecs  that justifies and update of 1 degree , based on rpm and matrix resolution , other alternative =7500 / (crpm*crad)
+	}
+
+	uint8_t getrad() { return mcrad; };
+	uint8_t getrpm() { return mcrpm; };
+	uint8_t getxc() { return mcxc; };
+	uint8_t getycrev() { return mcrev; };
+	void setxc(uint8_t cxc) { mcxc = cxc; };
+	void setyc(uint8_t cyc) { mcyc = cyc; };
+	void  setColor(CHSV ccolor) { mccolor = ccolor; };
+
+
+
+	//void Start() {};
+	//void Stop() {};
+	void ChgDir() {
+		mcdir = !mcdir;
+	}
+
+	void Update()
+	{
+		// check to see if it's time to change the state of the LED
+		unsigned long currentMillis = millis();
+
+		if (currentMillis - mpreviousMillis >= mupdatet)
+		{
+			Coordinates cpoint = Coordinates();
+
+			cpoint.fromPolar(mcrad, mcphi, mcxc, mcyc); // x + ((p_start + p_length)*(1+cos(p_angle))/2);
+														//y1 = y + ((p_start + p_length)*(1+sin(p_angle))/2);
+			uint8_t x1 = cpoint.getX(); // coordenadas punto 
+			uint8_t y1 = cpoint.getY();
+			c_leds(x1, y1) = mccolor;
+			//Serial.println(  x1, y1);
+
+			mpreviousMillis = currentMillis;  // Remember the time
+			mcphi = mcphi + 1 * (mcdir)-1 * (!mcdir); // incrementa en la direccion indicada
+			FastLED.show();
+
+		}
+	}
+
+};
+
+void circleBeat() {
+	// Use two out-of-sync sine waves
+	//incorporar centro y radio para ubicarlo en cualquier posicion, pasarlo a clase
+	//uint8_t  r = beatsin8(5, 0, 19, 0, 0);
+	uint8_t  i = beatsin8(32, 0, 19, 0, 0);
+	uint8_t  j = beatsin8(32, 0, 23, 0, 192);// la misma frecuencia hace un circulo con y defasado 64 gira horario y defasado192 en anti
+	c_leds(i, j) = CHSV((i + j) * 4, 255, 255);
+
+	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
+}
+
+class CircleBeat { //cxc,cyc,bpm,crad,ccolor, status, cdir 
+				   // Class Member Variables
+				   // These are initialized at startup
+private:
+	unsigned long mpreviousMillis, mupdatet; 	// will store last time LED was updated
+	uint8_t mcrad, mcbpm, mcxc, mcyc; // radio, BPM, center coords
+	bool mcdir;
+	uint8_t mcx, mcy;// pixel coordinates
+	bool  mcstatus;// 0 detenido , 1 activo
+	CHSV mccolor;
+
+
+public:
+	// cxc,cyc,crpm,crev,crad,ccolor,cdir : center coords, rpm, num of revs, radious , color ,dir
+	// Constructor - creates a Circulo  
+	// and initializes the member variables and state
+
+	CircleBeat(uint8_t cxc, uint8_t cyc, uint16_t cbpm, uint8_t crad, CHSV ccolor, bool cbstatus, bool cdir)
+	{
+		mcxc = cxc;
+		mcyc = cyc;
+		mcbpm = cbpm;
+		mcrad = crad;
+		mccolor = ccolor;
+		mcdir = cdir;// 0 horario 1 anti
+		mpreviousMillis = 0;  	// will store last time LED was updated
+		mcstatus = cbstatus = 0;
+
+	}
+
+	uint8_t getrad() { return mcrad; };
+	uint8_t getbpm() { return mcbpm; };
+	uint8_t getxc() { return mcxc; };
+	bool  getstatus() { return mcstatus; };
+	bool  getdir() { return mcdir; };
+	void setxc(uint8_t cxc) { mcxc = cxc; };
+	void setyc(uint8_t cyc) { mcyc = cyc; };
+	void  setColor(CHSV ccolor) { mccolor = ccolor; };
+	void setdir(bool cdir) { mcdir = cdir; };
+
+
+	void Start() { mcstatus = 1; };
+	void ChangeStatus() { mcstatus = !mcstatus; };
+	void Stop() { mcstatus = 0; };
+	void ChgDir() { mcdir = !mcdir; }
+
+	void Update()
+	{
+		// check to see if it's time to change the state of the LED
+		unsigned long currentMillis = millis();
+
+		if (currentMillis - mpreviousMillis >= mupdatet)
+		{
+			// Use two out-of-sync sine waves
+			//incorporar centro y radio para ubicarlo en cualquier posicion, pasarlo a clase
+			//uint8_t  r = beatsin8(5, 0, 19, 0, 0);
+
+			uint8_t  i = beatsin8(mcbpm, mcxc - mcrad, mcxc + mcrad, 0, 0);
+			uint8_t  j = beatsin8(mcbpm, mcyc - mcrad, mcyc + mcrad, 0, 64 * mcdir + 192 * !mcdir);// la misma frecuencia hace un circulo con y defasado 64 gira horario y defasado192 en anti
+			c_leds(i, j) = mccolor;
+
+			blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
+
+		}
+	}
+
+};
+
+void sendAll()
+{
+	Serial.print("SendAll : \t");
+
+	String json = "{";
+
+	json += "\"currentPattern\":{";
+	json += "\"index\":" + String(gCurrentPatternNumber);
+	json += ",\"name\":\"" + gPatternsAndArguments[gCurrentPatternNumber].mName + "\"}";
+
+	
+
+	json += ",\"patterns\":[";
+	for (uint8_t i = 0; i < numberOfPatterns; i++)
+	{
+		json += "\"" + gPatternsAndArguments[i].mName + "\"";
+		if (i < numberOfPatterns - 1)
+			json += ",";
+	}
+	json += "]";
+
+	json += "}";
+
+	// ESP8266WebServer.send(200, "text/json", json); // para webserver normal
+	webSocket.broadcastTXT(json); // para WS
+	json = String();
+}

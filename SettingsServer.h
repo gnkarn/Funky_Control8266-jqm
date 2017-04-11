@@ -18,6 +18,6 @@ extern void setupWiFi(void);
 extern void settingsServerTask(void);
 extern const char* pvhostname;
 extern bool updateStats;
-extern void CheckOTAServer(void);
+
 #endif //SETTINGSSERVER_H
 

@@ -3,27 +3,47 @@
   var connection;
 
 
-  function WSConnect(){
-var text = document.getElementById('webSocketCell').value;
-ipValue = text; 
-connection = new WebSocket(ipValue, ['arduino']);   
-connection.onopen = function() {
-  document.getElementById("webSocketCell").style.backgroundColor = "lightgreen"; 
-};
-connection.onclose = function() {
-  document.getElementById("webSocketCell").style.backgroundColor = "red"; 
-};
-connection.onmessage = function(evt) {
-    console.log((evt.data));
-    bigString2Vars(evt.data);
-    updateHTML();
-};
+  function WSConnect() {
+      var text = document.getElementById('webSocketCell').value;
+      ipValue = text;
+      connection = new WebSocket(ipValue, ['arduino']);
+      connection.onopen = function() {
+          document.getElementById("webSocketCell").style.backgroundColor = "lightgreen";
+      };
+      connection.onclose = function() {
+          document.getElementById("webSocketCell").style.backgroundColor = "red";
+      };
+      connection.onmessage = function(message) {
+         
+          JsonObj = JSON.parse(message.data);
+           console.log(JsonObj); // muestra el dato en la consola
+           alert(JsonObj); // para DEBUG 
 
-console.log(text)
-console.log("IP value changed to:"+ipValue);
-updateHTML();
+          $("#status").text("Connecting...");
 
-} 
+          // clear pattern list
+          $("#menu-efectos").find("option").remove();
+
+          // load pattern list
+          for (var i = 0; i < JsonObj.patterns.length; i++) {
+              var pattern = JsonObj.patterns[i];
+              $("#menu-efectos").append("<option value='" + i + "'>" + pattern + "</option>");
+          }
+
+          // select the current pattern
+          $("#menu-efectos").val(data.currentPattern.index);
+
+
+
+          $("#status").text("Ready");
+
+      };
+
+      console.log(text)
+      console.log("IP value changed to:" + ipValue);
+
+
+  }
 
 
   // determina que fecto fue seleccionado 
@@ -35,8 +55,10 @@ updateHTML();
 
   // fin script de efectos
 
-  // change on menu -->
+  // change on menu  jquery  document ready function -->
   $(function() {
+
+    
       $("select").on({
           change: function() {
               var efecto_selected = $(this).val();
@@ -64,13 +86,13 @@ updateHTML();
       });
       $('#color-input').on('slidermove', function() {
           $('#event-color').val($(this).wheelColorPicker('getValue', 'rgb'));
-          var hsvValue=$(this).wheelColorPicker('getValue', 'hsv%');
-          var hsvValue2=$('#color-input').val();
-          var value3=$.fn.wheelColorPicker.rgbToHsv(200 , 100, 50);
+          var hsvValue = $(this).wheelColorPicker('getValue', 'hsv%');
+          var hsvValue2 = $('#color-input').val();
+          var value3 = $.fn.wheelColorPicker.rgbToHsv(200, 100, 50);
           $('#event-color2').val(hsvValue);
-         console.log('w'+ " " +hsvValue);
-         connection.send("w"+ hsvValue);
-         
+          console.log('w' + " " + hsvValue);
+          connection.send("w" + hsvValue);
+
       });
   });
   // change on slider -->  al mover el slider ejecuta esta funcion
@@ -83,5 +105,5 @@ updateHTML();
 
       /* Act on the event */
       connection.send(slider_name + slider_value);
-      console.log(slider_name + " "+ slider_value);
+      console.log(slider_name + " " + slider_value);
   };

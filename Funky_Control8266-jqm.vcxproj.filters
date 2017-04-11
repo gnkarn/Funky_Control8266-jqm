@@ -18,6 +18,7 @@
     <None Include="Funky_Control8266-jqm.ino" />
     <None Include="funciones.ino" />
     <None Include="processing.ino" />
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.Funky_Control8266-jqm.vsarduino.h">

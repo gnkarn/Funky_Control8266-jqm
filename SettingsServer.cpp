@@ -200,7 +200,17 @@ void setupWiFi(void){
   wifiManager.setAPCallback(showWifiConfigAPMessage);
   wifiManager.setConfigPortalTimeout(180);
   wifiManager.setConnectTimeout(30);
-  if (!wifiManager.autoConnect("PV_setup_AP")) { 
+
+  //fetches ssid and pass from eeprom and tries to connect
+  //if it does not connect it starts an access point with the specified name
+  //here  "GNK_setup_AP"
+  //and goes into a blocking loop awaiting configuration
+  //wifiManager.autoConnect("GNK_setup_AP");
+  //or use this for auto generated name ESP + ChipID
+  //wifiManager.autoConnect();
+
+
+  if (!wifiManager.autoConnect("GNK_setup_AP")) { 
     Serial.println("failed to connect and hit timeout");
     delay(3000);
     //reset and try again, or maybe put it to deep sleep

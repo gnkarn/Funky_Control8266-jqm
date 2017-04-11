@@ -4,7 +4,7 @@
 
 // declaracion de funciones 
 
-//uint16_t  XY( uint8_t x, uint8_t y); // borrar
+
 void all_off();
 void SetupRandomPalette(); //2-color palette
 void SetupRandomPalette_g(); //3-color palette
@@ -64,7 +64,7 @@ void ripple() {
       currentBg--;
     }
     for (uint16_t l = 0; l < CUSTOM_NUM_LEDS; l++) {
-      leds2[l] = CHSV(currentBg, 255, 50);         // strip.setPixelColor(l, Wheel(currentBg, 0.1));
+      c_leds(l) = CHSV(currentBg, 255, 50);         // strip.setPixelColor(l, Wheel(currentBg, 0.1));
     }
 
     if (step == -1) {
@@ -74,18 +74,18 @@ void ripple() {
     }
 
     if (step == 0) {
-      leds2[center] = CHSV(color, 255, 255);         // strip.setPixelColor(center, Wheel(color, 1));
+      c_leds(center) = CHSV(color, 255, 255);         // strip.setPixelColor(center, Wheel(color, 1));
       step ++;
     }
     else {
       if (step < maxSteps) {
         //Serial.println(pow(fadeRate,step));
 
-        leds2[wrap(center + step)] = CHSV(color, 255, pow(fadeRate, step) * 255);     //   strip.setPixelColor(wrap(center + step), Wheel(color, pow(fadeRate, step)));
-        leds2[wrap(center - step)] = CHSV(color, 255, pow(fadeRate, step) * 255);     //   strip.setPixelColor(wrap(center - step), Wheel(color, pow(fadeRate, step)));
+        c_leds(wrap(center + step)) = CHSV(color, 255, pow(fadeRate, step) * 255);     //   strip.setPixelColor(wrap(center + step), Wheel(color, pow(fadeRate, step)));
+        c_leds(wrap(center - step)) = CHSV(color, 255, pow(fadeRate, step) * 255);     //   strip.setPixelColor(wrap(center - step), Wheel(color, pow(fadeRate, step)));
         if (step > 3) {
-          leds2[wrap(center + step - 3)] = CHSV(color, 255, pow(fadeRate, step - 2) * 255);   //   strip.setPixelColor(wrap(center + step - 3), Wheel(color, pow(fadeRate, step - 2)));
-          leds2[wrap(center - step + 3)] = CHSV(color, 255, pow(fadeRate, step - 2) * 255);   //   strip.setPixelColor(wrap(center - step + 3), Wheel(color, pow(fadeRate, step - 2)));
+			c_leds(wrap(center + step - 3)) = CHSV(color, 255, pow(fadeRate, step - 2) * 255);   //   strip.setPixelColor(wrap(center + step - 3), Wheel(color, pow(fadeRate, step - 2)));
+			c_leds(wrap(center - step + 3)) = CHSV(color, 255, pow(fadeRate, step - 2) * 255);   //   strip.setPixelColor(wrap(center - step + 3), Wheel(color, pow(fadeRate, step - 2)));
         }
         step ++;
       }
@@ -155,7 +155,7 @@ void Fire2012()
       } else {
         pixelnumber = j;
       }
-      leds2[pixelnumber] = color;
+      c_leds(pixelnumber) = color;
     }
     FastLED.show(); // display this frame
   }
@@ -166,7 +166,7 @@ void Fire2012()
 
 void fadeall() {
   for (int i = 0; i < CUSTOM_NUM_LEDS; i++) {
-    leds2[i].nscale8(200);
+    c_leds(i).nscale8(200);
   }
 }
 
@@ -193,11 +193,10 @@ void cylon() {
         if (i < CUSTOM_NUM_LEDS) {
           i++;
           // Set the i'th led to red
-          leds2[i] = CHSV(hue++, 255, 255);
+          c_leds(i) = CHSV(hue++, 255, 255);
           // Show the leds2
           FastLED.show();
-          // now that we've shown the leds, reset the i'th led to black
-          // leds2[i] = CRGB::Black;
+
           fadeall();
           // Wait a little bit before we loop around and do it again
 
@@ -211,7 +210,7 @@ void cylon() {
         if (i > 0) {
           // Now go in the other direction.
           // Set the i'th led to red
-          leds2[(i--) - 1] = CHSV(hue++, 255, 255);
+          c_leds((i--) - 1) = CHSV(hue++, 255, 255);
           // Show the leds
           FastLED.show();
           // now that we've shown the leds, reset the i'th led to black
@@ -306,7 +305,8 @@ void mapNoiseToLEDsUsingPalette()
       }
 
       CRGB color = ColorFromPalette( currentPalette, index, bri);
-      leds2[XY2(i,j)] = color;
+	  //c_leds(XY2(i,j)) = color;
+	  c_leds(i, j) = color;
     }
   }
   
@@ -438,7 +438,7 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex)
   uint8_t brightness = 255;
   
   for( int i = 0; i < CUSTOM_NUM_LEDS; i++) {
-    leds2[i] = ColorFromPalette( currentPalette, colorIndex + sin8(i*16), brightness);
+    c_leds(i) = ColorFromPalette( currentPalette, colorIndex + sin8(i*16), brightness);
     colorIndex += 3;
   }
 }
@@ -610,8 +610,8 @@ void AudioSpiral(byte color1, byte color2) {
 void MSGEQtest5(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		Line(2 * i, 16 - left[i] / 64, 2 * i, 15, i*hmult);
-		Line(1 + 2 * i, 16 - left[i] / 64, 1 + 2 * i, 15, i*hmult);
+		BresenhamLine(2 * i, 16 - left[i] / 64, 2 * i, 15, i*hmult);
+		BresenhamLine(1 + 2 * i, 16 - left[i] / 64, 1 + 2 * i, 15, i*hmult);
 	}
 	ShowFrame();
 	SpiralStream(7, 7, 7, dim);
@@ -621,8 +621,8 @@ void MSGEQtest5(byte dim, byte hmult) {
 void MSGEQtest6(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		Line(2 * i, 16 - left[i] / 64, 2 * i, 15, i*hmult);
-		Line(1 + 2 * i, 16 - left[i] / 64, 1 + 2 * i, 15, i*hmult);
+		BresenhamLine(2 * i, 16 - left[i] / 64, 2 * i, 15, i*hmult);
+		BresenhamLine(1 + 2 * i, 16 - left[i] / 64, 1 + 2 * i, 15, i*hmult);
 	}
 	ShowFrame();
 	VerticalStream(dim);
@@ -672,7 +672,7 @@ void MSGEQtest9(byte hmult, byte s) {
 void CopyTest(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		Line(i, 4 - left[i] / 256, i, 4, i*hmult);
+		BresenhamLine(i, 4 - left[i] / 256, i, 4, i*hmult);
 	}
 	Copy(0, 0, 4, 4, 5, 0);
 	Copy(0, 0, 4, 4, 10, 0);
@@ -687,7 +687,7 @@ void CopyTest(byte dim, byte hmult) {
 void CopyTest2(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		Line(i * 2, 4 - left[i] / 128, i * 2, 4, i*hmult);
+		BresenhamLine(i * 2, 4 - left[i] / 128, i * 2, 4, i*hmult);
 	}
 	Scale(0, 0, 4, 4, 7, 7, 15, 15);
 	ShowFrame();
@@ -699,7 +699,7 @@ void CopyTest2(byte dim, byte hmult) {
 void Audio1(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		Line(3 * i, 16 - left[i] / 64, 3 * (i + 1), 16 - left[i + 1] / 64, 255 - i*hmult);
+		BresenhamLine(3 * i, 16 - left[i] / 64, 3 * (i + 1), 16 - left[i + 1] / 64, 255 - i*hmult);
 	}
 	Caleidoscope4();
 	ShowFrame();
@@ -710,7 +710,7 @@ void Audio1(byte dim, byte hmult) {
 void Audio2(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		Line(3 * i, 16 - left[i] / 64, 3 * (i + 1), 16 - left[i + 1] / 64, 255 - i*hmult);
+		BresenhamLine(3 * i, 16 - left[i] / 64, 3 * (i + 1), 16 - left[i + 1] / 64, 255 - i*hmult);
 	}
 	ShowFrame();
 	HorizontalStream(dim);
@@ -730,7 +730,7 @@ void Audio3(byte dim, byte hmult) {
 void Audio4(byte dim, byte hdiv) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		Line(3 * i, 8 - left[i] / 128, 3 * (i + 1), 8 - left[i + 1] / 128, i*left[i] / hdiv);
+		BresenhamLine(3 * i, 8 - left[i] / 128, 3 * (i + 1), 8 - left[i + 1] / 128, i*left[i] / hdiv);
 	}
 	Caleidoscope4();
 	ShowFrame();
@@ -740,7 +740,7 @@ void Audio4(byte dim, byte hdiv) {
 void CaleidoTest1(byte dim, byte hdiv) {
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		Line(i, left[i] / 256, i, 0, left[i] / hdiv);
+		BresenhamLine(i, left[i] / 256, i, 0, left[i] / hdiv);
 	}
 	RotateTriangle();
 	Caleidoscope2();  //copy + rotate
@@ -752,7 +752,7 @@ void CaleidoTest2(byte dim, byte color_ofset) {
 	MoveOscillators();
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		Line(i, left[i] / 200, i, 0, (left[i] / 16) + color_ofset);
+		BresenhamLine(i, left[i] / 200, i, 0, (left[i] / 16) + color_ofset);
 	}
 	MirrorTriangle();
 	Caleidoscope1();  //mirror + rotate
@@ -763,7 +763,7 @@ void CaleidoTest2(byte dim, byte color_ofset) {
 void Audio5(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		Line(
+		BresenhamLine(
 			3 * i, 8 - left[i] / 128,        // from
 			3 * (i + 1), 8 - left[i + 1] / 128,  // to
 			i * hmult);
@@ -776,11 +776,11 @@ void Audio5(byte dim, byte hmult) {
 void Audio6(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		Line(
+		BresenhamLine(
 			3 * i, 8 - left[i] / 128,        // from
 			3 * (i + 1), 8 - left[i + 1] / 128,  // to
 			i * 10);                         // lolor
-		Line(
+		BresenhamLine(
 			15 - (3 * i), 7 + left[i] / 128,        // from
 			15 - (3 * (i + 1)), 7 + left[i + 1] / 128,  // to
 			i * hmult);                              // color
@@ -934,4 +934,66 @@ void NoiseExample7(byte nada, byte scale) {
 		}
 		ShowFrame();
 	}
+}
+
+void drawEstrella(uint8_t x, uint8_t y, uint8_t arms, uint8_t start, uint8_t length, CHSV color) //center , #arms,start length, length, color
+{
+	uint8_t delta = 64 / arms; // angulo incremental
+	for (uint16_t angle = 0; angle <= 254; angle = angle + delta) // vuelta completa
+	{
+		drawLineByAngle(x, y, angle, start, length, color);
+		//Serial.print("\tangle= ");Serial.println( angle);// debug
+		drawLineByAngle(x, y, angle + 128, start, length, color);
+		;
+	}
+
+	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
+	RenderCustomMatrix();
+}
+
+void DrawVentilador(uint8_t centrox, uint8_t centroy, uint8_t radio, int angulo, CHSV color) {
+
+	color.h = random8(200);
+	drawLineByAngle(centrox, centroy, angulo, 2, radio, color);
+	//blur2d((leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
+
+
+
+
+
+
+}
+
+
+void diagonalFill() {
+	// ** Fill LED's with diagonal stripes
+	for (uint8 x = 0; x < (c_leds.Width() + c_leds.Height()); ++x)
+	{
+		c_leds.DrawLine(x - c_leds.Height(), c_leds.Height() - 1, x, 0, CHSV(h, 255, 255));
+		h += 16;
+	}
+}
+
+void HorizontalStripes() {
+	// ** Fill LED's with horizontal stripes
+	for (uint8 y = 0; y<c_leds.Height(); ++y)
+	{
+		c_leds.DrawLine(0, y, c_leds.Width() - 1, y, CHSV(h, 255, 255));
+
+
+		h += 16;
+	}
+	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);// blur the individual circles
+}
+
+void anillos() {
+	// ** circulos concentricos
+	for (uint8 y = 0; y<c_leds.Height(); ++y)
+	{
+
+		c_leds.DrawCircle(10, 12, y, CHSV(h, 255, 250));
+
+		h += 16;
+	}
+	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);// blur the individual circles
 }
