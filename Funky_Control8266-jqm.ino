@@ -1,6 +1,6 @@
 /*
 TODO:
- 
+
  example show oscis+p
  document caleidoscopes better
  write better caleidoscopes...
@@ -16,11 +16,11 @@ TODO:
  1D examples
  2d example with more than 2 sines
  speed up MSGEQ7 readings
- 
- 
+
+
  DONE:
- 25.6.      creating basic structure 
- setting up basic examples 
+ 25.6.      creating basic structure
+ setting up basic examples
  26.6.      MSGEQ7 Support
  wrote more examples
  27.6.      improved documentation
@@ -33,40 +33,40 @@ TODO:
  30.6.      RenderCustomMatrix
  added more comments
  alpha version released
- 
- 
+
+
 /*
- 
+
 /*
  Funky Clouds Compendium (alpha version)
  by Stefan Petrick
- 
- An ever growing list of examples, tools and toys 
+
+ An ever growing list of examples, tools and toys
  for creating one- and twodimensional LED effects.
- 
+
  Dedicated to the users of the FastLED v2.1 library
  by Daniel Garcia and Mark Kriegsmann.
- 
+
  Provides basic and advanced helper functions.
  Contains many examples how to creatively combine them.
- 
+
  Tested @ATmega2560 (runs propably NOT on an Uno or
  anything else with less than 4kB RAM)
  */
 
-// modificado por GNK para matriz de 20x24 
-// la fncion de conversion interpola 2 valores de x para generar un x nuevo, pues son mas leds fisicos en x
-// y promedia dos valores de Y para calcular un Y en la matriz de salida , pues son menos
-// sin terminar incopora lectura de port serie para cambiar parametros, ver listas de lectura
-// http://robotic-controls.com/learn/arduino/reading-numbers-serial
-// https://gist.github.com/kasperkamperman/6c7c256f7042a3ca5118
-// y para excritura desde teensy a processing ver https://github.com/marmilicious/FastLED_2_Processing/blob/master/test_serial_from_arduino_v10.pde
-// oct-2016 modificado para 8266 e incorpora manejo de paterns
-// funciona ok con sonido
-// 21-8 integra lecdcontrol8266 matriz jqm, con funkyCloudsApa102-8266 este ultimo, funciona ok, con sonido, no tiene integrado la interface de aplicacion web.
+ // modificado por GNK para matriz de 20x24 
+ // la fncion de conversion interpola 2 valores de x para generar un x nuevo, pues son mas leds fisicos en x
+ // y promedia dos valores de Y para calcular un Y en la matriz de salida , pues son menos
+ // sin terminar incopora lectura de port serie para cambiar parametros, ver listas de lectura
+ // http://robotic-controls.com/learn/arduino/reading-numbers-serial
+ // https://gist.github.com/kasperkamperman/6c7c256f7042a3ca5118
+ // y para excritura desde teensy a processing ver https://github.com/marmilicious/FastLED_2_Processing/blob/master/test_serial_from_arduino_v10.pde
+ // oct-2016 modificado para 8266 e incorpora manejo de paterns
+ // funciona ok con sonido
+ // 21-8 integra lecdcontrol8266 matriz jqm, con funkyCloudsApa102-8266 este ultimo, funciona ok, con sonido, no tiene integrado la interface de aplicacion web.
 
-//ver // https://github.com/wvdv2002/ESP8266-LED-Websockets/blob/master/arduino/ledcontrol/ledcontrol.ino
-//falta incluir los efectos de ESP8266 FastledNoise
+ //ver // https://github.com/wvdv2002/ESP8266-LED-Websockets/blob/master/arduino/ledcontrol/ledcontrol.ino
+ //falta incluir los efectos de ESP8266 FastledNoise
 
 
 
@@ -75,6 +75,7 @@ TODO:
 #include <ArduinoOTA.h>
 #include <WiFiManager.h>
 #include <ESP8266WiFi.h>
+#include <DNSServer.h>
 #include <WiFiUdp.h>
 #include <FastLED.h>
 #include <Hash.h>
@@ -84,11 +85,8 @@ TODO:
 #include "SettingsServer.h"
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266SSDP.h>
-
-
-
 #include <ESP8266WebServer.h>
-
+#include <ArduinoJson\ArduinoJson.h>
 
 #include <FastLED_GFX.h>
 // para integrar MAtrix example-APA102
@@ -96,13 +94,17 @@ TODO:
 // ver https://github.com/AaronLiddiment/LEDMatrix/wiki
 #include <coordinates.h> // ahora incluido como una libreria
 
+
 int  ledState = LOW;
 
 #define USE_SERIAL Serial
 
 extern "C" {
-  #include "user_interface.h"
+#include "user_interface.h"
 }
+
+
+
 
 // define your LED hardware setup here
 #define DATA_PIN    4// D2sale x gpio 04
@@ -130,8 +132,10 @@ const bool    kMatrixSerpentineLayout = true;
 // check in that case the setup part and
 // RenderCustomMatrix() and
 // ShowFrame() for more comments
-const uint8_t CUSTOM_WIDTH  = 20;
+const uint8_t CUSTOM_WIDTH = 20;
 const uint8_t CUSTOM_HEIGHT = 24;
+
+uint8_t hue; // para cambiar color en efectos dentro del loop
 
 // MSGEQ7 wiring on spectrum analyser shield
 #define MSGEQ7_STROBE_PIN 4//antes 2
@@ -142,7 +146,7 @@ const uint8_t CUSTOM_HEIGHT = 24;
 
 // all 2D effects will be calculated in this matrix size
 // do not touch
-const uint8_t WIDTH  = 16;// 
+const uint8_t WIDTH = 16;// 
 const uint8_t HEIGHT = 16;
 
 // number of LEDs based on fixed calculation matrix size
@@ -164,7 +168,7 @@ uint8_t h;// color para funciones
 #define MILLI_AMPERE      1000    // IMPORTANT: set here the max milli-Amps of your power supply 5V 2A = 2000
 #define FRAMES_PER_SECOND  200    // here you can control the speed. 
 int ledMode = 4;                  // this is the starting palette
-const uint8_t kMatrixWidth  = WIDTH;
+const uint8_t kMatrixWidth = WIDTH;
 const uint8_t kMatrixHeight = HEIGHT;
 
 #define MAX_DIMENSION ((CUSTOM_WIDTH>CUSTOM_HEIGHT) ? CUSTOM_WIDTH : CUSTOM_HEIGHT)
@@ -191,7 +195,7 @@ uint8_t scale = 30; // scale is set dynamically once we've started up
 uint8_t noise[MAX_DIMENSION][MAX_DIMENSION];
 CRGBPalette16 currentPalette(CRGB::Black);
 
- CRGBPalette16 targetPalette( CRGB::Black );
+CRGBPalette16 targetPalette(CRGB::Black);
 uint8_t       colorLoop = 1;
 
 //Some Variables
@@ -201,7 +205,7 @@ byte myHue = 33;                    //I am using HSV, the initial settings displ
 byte mySaturation = 168;
 byte myValue = 255;
 String  myrgb = "(0,0,0)";            // color desde websockets color picker
-unsigned int myparameter1=0;			// usef for speed change on noise effect as a global var
+unsigned int myparameter1 = 0;			// usef for speed change on noise effect as a global var
 byte rainbowHue = myHue;            //Using this so the rainbow effect doesn't overwrite the hue set on the website
 
 int flickerTime = random(200, 400);
@@ -209,7 +213,7 @@ int flickerLed;
 int flickerValue = 110 + random(-3, +3); //70 works nice, too
 int flickerHue = 33;
 
-bool eepromCommitted = true;      
+bool eepromCommitted = true;
 
 unsigned long currentTime = 0;
 unsigned long previousTime = 0;
@@ -234,7 +238,7 @@ CRGBSet ledSet(leds, NUM_LEDS);    //Trying LEDSet from FastLED
 
 // the oscillators: linear ramps 0-255
 // modified only by MoveOscillators()
-byte osci[4]; 
+byte osci[4];
 
 // sin8(osci) swinging between 0 - 15
 // modified only by MoveOscillators()
@@ -242,7 +246,7 @@ byte p[4];
 
 // storage of the 7 10Bit (0-1023) audio band values
 // modified only by AudioRead()
-int left[7];    
+int left[7];
 int right[7];
 
 
@@ -271,16 +275,169 @@ extern const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
+// estas clases , para efectos deberia pasarlas a un .h separado
+class Circulo {
+	// Class Member Variables
+	// These are initialized at startup
+private:
+	unsigned long mpreviousMillis, mupdatet; 	// will store last time LED was updated
+	uint8_t mcrad, mcrpm, mcxc, mcyc;
+	bool mcdir;
+	uint8_t mcx, mcy;// pixel coordinates
+	uint16_t  mcrev;
+	CHSV mccolor;
+	uint8_t mcphi; // angulo del pixel
+
+public:
+	// cxc,cyc,crpm,crev,crad,ccolor,cdir : center coords, rpm, num of revs, radious , color ,dir
+	// Constructor - creates a Circulo  
+	// and initializes the member variables and state
+
+	Circulo(uint8_t cxc, uint8_t cyc, uint16_t crpm, uint8_t crev, uint8_t crad, CHSV ccolor, bool cdir)
+	{
+		mcxc = cxc;
+		mcyc = cyc;
+		mcrpm = crpm;
+		mcrev = crev;
+		mcrad = crad;
+		mcphi = 0;
+		mccolor = ccolor;
+		mcdir = cdir;// 0 horario 1 anti
+		mpreviousMillis = 0;  	// will store last time LED was updated
+		mupdatet = 256 / (crpm); // time in msecs  that justifies and update of 1 degree , based on rpm and matrix resolution , other alternative =7500 / (crpm*crad)
+	}
+
+	uint8_t getrad() { return mcrad; };
+	uint8_t getrpm() { return mcrpm; };
+	uint8_t getxc() { return mcxc; };
+	uint8_t getycrev() { return mcrev; };
+	void setxc(uint8_t cxc) { mcxc = cxc; };
+	void setyc(uint8_t cyc) { mcyc = cyc; };
+	void  setColor(CHSV ccolor) { mccolor = ccolor; };
+
+
+
+	//void Start() {};
+	//void Stop() {};
+	void ChgDir() {
+		mcdir = !mcdir;
+	}
+
+	void Update()
+	{
+		// check to see if it's time to change the state of the LED
+		unsigned long currentMillis = millis();
+
+		if (currentMillis - mpreviousMillis >= mupdatet)
+		{
+			Coordinates cpoint = Coordinates();
+
+			cpoint.fromPolar(mcrad, mcphi, mcxc, mcyc); // x + ((p_start + p_length)*(1+cos(p_angle))/2);
+														//y1 = y + ((p_start + p_length)*(1+sin(p_angle))/2);
+			uint8_t x1 = cpoint.getX(); // coordenadas punto 
+			uint8_t y1 = cpoint.getY();
+			c_leds(x1, y1) = mccolor;
+			//Serial.println(  x1, y1);
+
+			mpreviousMillis = currentMillis;  // Remember the time
+			mcphi = mcphi + 1 * (mcdir)-1 * (!mcdir); // incrementa en la direccion indicada
+			FastLED.show();
+
+		}
+	}
+
+};
+class CircleBeat { //cxc,cyc,bpm,crad,ccolor, status, cdir 
+				   // Class Member Variables
+				   // These are initialized at startup
+private:
+	unsigned long mpreviousMillis, mupdatet; 	// will store last time LED was updated
+	uint8_t mcrad, mcbpm, mcxc, mcyc; // radio, BPM, center coords
+	bool mcdir;
+	uint8_t mcx, mcy;// pixel coordinates
+	bool  mcstatus;// 0 detenido , 1 activo
+	CHSV mccolor;
+
+
+public:
+	// cxc,cyc,crpm,crev,crad,ccolor,cdir : center coords, rpm, num of revs, radious , color ,dir
+	// Constructor - creates a Circulo  
+	// and initializes the member variables and state
+
+	CircleBeat(uint8_t cxc, uint8_t cyc, uint16_t cbpm, uint8_t crad, CHSV ccolor, bool cbstatus, bool cdir)
+	{
+		mcxc = cxc;
+		mcyc = cyc;
+		mcbpm = cbpm;
+		mcrad = crad;
+		mccolor = ccolor;
+		mcdir = cdir;// 0 horario 1 anti
+		mpreviousMillis = 0;  	// will store last time LED was updated
+		mcstatus = cbstatus = 0;
+
+	}
+
+	uint8_t getrad() { return mcrad; };
+	uint8_t getbpm() { return mcbpm; };
+	uint8_t getxc() { return mcxc; };
+	bool  getstatus() { return mcstatus; };
+	bool  getdir() { return mcdir; };
+	void setxc(uint8_t cxc) { mcxc = cxc; };
+	void setyc(uint8_t cyc) { mcyc = cyc; };
+	void  setColor(CHSV ccolor) { mccolor = ccolor; };
+	void setdir(bool cdir) { mcdir = cdir; };
+
+
+	void Start() { mcstatus = 1; };
+	void ChangeStatus() { mcstatus = !mcstatus; };
+	void Stop() { mcstatus = 0; };
+	void ChgDir() { mcdir = !mcdir; }
+
+	void Update()
+	{
+		// check to see if it's time to change the state of the LED
+		unsigned long currentMillis = millis();
+
+		if (currentMillis - mpreviousMillis >= mupdatet)
+		{
+			// Use two out-of-sync sine waves
+			//incorporar centro y radio para ubicarlo en cualquier posicion, pasarlo a clase
+			//uint8_t  r = beatsin8(5, 0, 19, 0, 0);
+
+			uint8_t  i = beatsin8(mcbpm, mcxc - mcrad, mcxc + mcrad, 0, 0);
+			uint8_t  j = beatsin8(mcbpm, mcyc - mcrad, mcyc + mcrad, 0, 64 * mcdir + 192 * !mcdir);// la misma frecuencia hace un circulo con y defasado 64 gira horario y defasado192 en anti
+			c_leds(i, j) = mccolor;
+
+			blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
+
+		}
+	}
+
+};
+
+// defino tres objetos para efectos
+// --------------------------------------------------------------
+// Circulo( cxc,  cyc,  crpm,  crev,  crad,  ccolor,  cdir)
+Circulo cir1(10, 12, 255, 2, 6, CHSV(0, 255, 255), 0);
+//cxc,cyc,bpm,crad,ccolor, status, cdir 
+CircleBeat circleB1(10, 12, 20, 8, CHSV(200, 255, 255), 1, 0);
+CircleBeat circleB2(10, 12, 32, 4, CHSV(120, 255, 255), 1, 1);
+// ---------------------------------------------------------------
+
+
+
 #include "LEDanimations.h"
 #include "LEDWebsockets.h"
 
 
 // factores para mapear la matriz de 16x16 en la matriz fisica
-uint8_t Fy = kMatrixHeight/CUSTOM_HEIGHT;
-uint8_t Fx = kMatrixWidth/CUSTOM_WIDTH;
+uint8_t Fy = kMatrixHeight / CUSTOM_HEIGHT;
+uint8_t Fx = kMatrixWidth / CUSTOM_WIDTH;
 
-long Duracion ;// para timer de funcion
-long Previous_millis=0;
+long Duracion;// para timer de funcion
+long Previous_millis = 0;
+
+
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
 // Each pattern is defined as a function that takes two uint8_t's; all of the pattern functions
@@ -328,9 +485,17 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ NoiseExample6	,"NoiseExample6",	50/*hofset*/	,200 /* scale*/ },
 	{ NoiseExample7	,"NoiseExample7",	0/*nada*/		,100 /* scale*/ },
 	{ LedsNoise		,"LedsNoise",	0/* nada*/		,0	 /* nada1*/ },//32
-
-	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
+	{ circulo1		,"Circulo1",	0/* nada*/		,0	 /* nada1*/ },
+	{ anillos		,"anillos",	0/* nada*/		,0	 /* nada1*/ },
+	{ HorizontalStripes		,"HorizontalStripes",	0/* nada*/		,0	 /* nada1*/ },
+	{ diagonalFill		,"diagonalFill",	0/* nada*/		,0	 /* nada1*/ },
+	{ HorMirror		,"HorMirror",	0/* nada*/		,0	 /* nada1*/ },
+	{ VertMirror		,"VertMirror",	0/* nada*/		,0	 /* nada1*/ },
+	{ QuadMirror		,"QuadMirror",	0/* nada*/		,0	 /* nada1*/ },
+	{ circulo2		,"circulo2",	0/* nada*/		,0	 /* nada1*/ },
 	
+	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
+
 };
 const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAndArguments[0]);
 
@@ -343,112 +508,134 @@ const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAnd
  -------------------------------------------------------------------
  */
 void setup() {
-  // Open serial connection, 115200 baud
-pinMode(LED_BUILTIN, OUTPUT);// led pin as output
-pinMode(MSGEQ7_STROBE_PIN, OUTPUT);// strobe pin as output
-pinMode(MSGEQ7_RESET_PIN, OUTPUT);// reset  pin as output
 
-pinMode(DATA_PIN, OUTPUT);// led data  pin as output
-pinMode(CLK_PIN, OUTPUT);// led clk  pin as output
+	
 
+	// Open serial connection, 115200 baud
+	pinMode(LED_BUILTIN, OUTPUT);// led pin as output
+	pinMode(MSGEQ7_STROBE_PIN, OUTPUT);// strobe pin as output
+	pinMode(MSGEQ7_RESET_PIN, OUTPUT);// reset  pin as output
 
+	pinMode(DATA_PIN, OUTPUT);// led data  pin as output
+	pinMode(CLK_PIN, OUTPUT);// led clk  pin as output
 
-  Serial.begin(115200);
-  
+	Serial.begin(115200);
 
- // firstContact();  // Connect with Processing. Hello, is anyone out there? (eliminado pues no uso el port serie con processing)
-  
-  // use the following line only when working with a 16*16
-  // and delete everything in the function RenderCustomMatrix() 
-  // at the end of the code; edit XY() to change your matrix layout
-  // right now it is doing a serpentine mapping
-  //FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds2, CUSTOM_NUM_LEDS);
-  
-    //FastLED.addLeds<APA102,11,13,RGB,DATA_RATE_MHZ(10) >(leds,NUM_LEDS);
-   //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER,DATA_RATE_MHZ(10)>(leds2, CUSTOM_NUM_LEDS).setCorrection(TypicalLEDStrip);
+	// -------------Solo un ejemplo aun no lo estoy usando ----------------
+	// Step 1: DEfinir Json buffer :Reserve memory space
+	//
+	StaticJsonBuffer<200> jsonBuffer;// Step 1: Reserve memory space
 
-   LEDS.addLeds<LED_TYPE, DATA_PIN, CLK_PIN, COLOR_ORDER>(c_leds[0], c_leds.Size()).setCorrection(TypicalSMD5050);
+  // Step 2: Build object tree in memory
 
-  FastLED.setBrightness(BRIGHTNESS);
-  set_max_power_in_volts_and_milliamps(5, MILLI_AMPERE);
-  LEDColorCorrection{ TypicalSMD5050 };
-  FastLED.setDither(0);
-  // just for debugging:
-  
-  
-  InitMSGEQ7();
-  // Initialize our noise coordinates to some random values
-  x = random16();
-  y = random16();
-  z = random16();
+	JsonObject& root = jsonBuffer.createObject();
+	root["sensorico1"] = "gps";
+	root["time"] = 1351824120;
 
-  x2 = random16();
-  y2 = random16();
-  z2 = random16();
-
-// setup desde ledcontrol-8266-matriz-jqm
- 
- // Reading EEPROM
-  myEffect = 1;                         // Only read EEPROM for the myEffect variable after you're sure the animation you are testing won't break OTA updates, make your ESP restart etc. or you'll need to use the USB interface to update the module.
-//  myEffect = EEPROM.read(0); //blocking effects had a bad effect on the website hosting, without commenting this away even restarting would not help
-  myHue = EEPROM.read(1);
-  mySaturation = EEPROM.read(2);
-  myValue = EEPROM.read(3);
-  myparameter1 = EEPROM.read(4);
-  myparameter1 += EEPROM.read(5)*256;
-
-  delay(100);                                         //Delay needed, otherwise showcolor doesn't light up all leds or they produce errors after turning on the power supply - you will need to experiment
-  LEDS.showColor(CHSV(myHue, mySaturation, myValue));
- // fin setup desde ledcontrol.8266 matriz-jqm
- 
+	JsonArray& miJarray = root.createNestedArray("JSONarray");
+	miJarray.add(48.756080, 6);  // 6 is the number of decimals to print
+	miJarray.add(2.302038, 6);   // if not specified, 2 digits are printed
+	// FIN ejemplo de JSON ------------------------------------------------
 
 
-  Serial.println();
-  Serial.print(F("Heap: ")); Serial.println(system_get_free_heap_size());
-  Serial.print(F("Boot Vers: ")); Serial.println(system_get_boot_version());
-  Serial.print(F("CPU: ")); Serial.println(system_get_cpu_freq());
-  Serial.print(F("SDK: ")); Serial.println(system_get_sdk_version());
-  Serial.print(F("Chip ID: ")); Serial.println(system_get_chip_id());
-  Serial.print(F("Flash ID: ")); Serial.println(spi_flash_get_id());
-  Serial.print(F("Flash Size: ")); Serial.println(ESP.getFlashChipRealSize());
-  Serial.print(F("Vcc: ")); Serial.println(ESP.getVcc());
-  Serial.println();
 
-  setupWiFi();
-  startSettingsServer();
-  webSocket.begin();
-  webSocket.onEvent(webSocketEvent);
+   // firstContact();  // Connect with Processing. Hello, is anyone out there? (eliminado pues no uso el port serie con processing)
 
- /* ----------------------------------------
-  drawEstrella(10, 12, 2, 0, 10, CHSV(HUE_RED, 255, 255));
-  blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
+	// use the following line only when working with a 16*16
+	// and delete everything in the function RenderCustomMatrix() 
+	// at the end of the code; edit XY() to change your matrix layout
+	// right now it is doing a serpentine mapping
+	//FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds2, CUSTOM_NUM_LEDS);
 
-  delay(2000);
-  FastLED.clear(true);
-  for (uint16_t i = 0; i <= 1024; i++)
-  {
-	  //DrawVentilador(10, 12, 5, i, CHSV(0, 255, 255));
-	  drawLineByAngle(10, 12, i, 0, 7, CHSV(i, 255, 255));
-	  drawLineByAngle(10, 12, i + 128, 0, 7, CHSV(i, 255, 255));
-	  FastLED.show();
-	  FastLED.delay(2);
-	  fadeToBlackBy(c_leds[0], 480, 32);
-  }
-  for (uint16_t i = 0; i <= 5000; i++)
-  {
-	  circleBeat();
-	  FastLED.show();
-	  FastLED.delay(1);
-	  fadeToBlackBy(c_leds[0], 480, 32);
-  }
-  */
+	  //FastLED.addLeds<APA102,11,13,RGB,DATA_RATE_MHZ(10) >(leds,NUM_LEDS);
+	 //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER,DATA_RATE_MHZ(10)>(leds2, CUSTOM_NUM_LEDS).setCorrection(TypicalLEDStrip);
 
-  // ---------------------------------
+	LEDS.addLeds<LED_TYPE, DATA_PIN, CLK_PIN, COLOR_ORDER>(c_leds[0], c_leds.Size()).setCorrection(TypicalSMD5050);
 
-  Serial.println(" fin Setup ");
+	FastLED.setBrightness(BRIGHTNESS);
+	set_max_power_in_volts_and_milliamps(5, MILLI_AMPERE);
+	LEDColorCorrection{ TypicalSMD5050 };
+	FastLED.setDither(0);
+	// just for debugging:
 
- 
-  
+
+	InitMSGEQ7();
+	// Initialize our noise coordinates to some random values
+	x = random16();
+	y = random16();
+	z = random16();
+
+	x2 = random16();
+	y2 = random16();
+	z2 = random16();
+
+	// setup desde ledcontrol-8266-matriz-jqm
+
+	 // Reading EEPROM
+	myEffect = 1;                         // Only read EEPROM for the myEffect variable after you're sure the animation you are testing won't break OTA updates, make your ESP restart etc. or you'll need to use the USB interface to update the module.
+  //  myEffect = EEPROM.read(0); //blocking effects had a bad effect on the website hosting, without commenting this away even restarting would not help
+	myHue = EEPROM.read(1);
+	mySaturation = EEPROM.read(2);
+	myValue = EEPROM.read(3);
+	myparameter1 = EEPROM.read(4);
+	myparameter1 += EEPROM.read(5) * 256;
+
+
+	delay(100);                                         //Delay needed, otherwise showcolor doesn't light up all leds or they produce errors after turning on the power supply - you will need to experiment
+	LEDS.showColor(CHSV(myHue, mySaturation, myValue));
+	// fin setup desde ledcontrol.8266 matriz-jqm
+
+	WiFi.disconnect(); // Borra ssid y password 
+
+	Serial.println();
+	Serial.print(F("Heap: ")); Serial.println(system_get_free_heap_size());
+	Serial.print(F("Boot Vers: ")); Serial.println(system_get_boot_version());
+	Serial.print(F("CPU: ")); Serial.println(system_get_cpu_freq());
+	Serial.print(F("SDK: ")); Serial.println(system_get_sdk_version());
+	Serial.print(F("Chip ID: ")); Serial.println(system_get_chip_id());
+	Serial.print(F("Flash ID: ")); Serial.println(spi_flash_get_id());
+	Serial.print(F("Flash Size: ")); Serial.println(ESP.getFlashChipRealSize());
+	Serial.print(F("Vcc: ")); Serial.println(ESP.getVcc());
+	Serial.println();
+
+	setupWiFi(); // ejecuta el WIFIManager
+	startSettingsServer();
+	webSocket.begin();
+	webSocket.onEvent(webSocketEvent);
+
+	/* ----------------------------------------
+	 drawEstrella(10, 12, 2, 0, 10, CHSV(HUE_RED, 255, 255));
+	 blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
+
+	 delay(2000);
+	 FastLED.clear(true);
+	 for (uint16_t i = 0; i <= 1024; i++)
+	 {
+		 //DrawVentilador(10, 12, 5, i, CHSV(0, 255, 255));
+		 drawLineByAngle(10, 12, i, 0, 7, CHSV(i, 255, 255));
+		 drawLineByAngle(10, 12, i + 128, 0, 7, CHSV(i, 255, 255));
+		 FastLED.show();
+		 FastLED.delay(2);
+		 fadeToBlackBy(c_leds[0], 480, 32);
+	 }
+	 for (uint16_t i = 0; i <= 5000; i++)
+	 {
+		 circleBeat();
+		 FastLED.show();
+		 FastLED.delay(1);
+		 fadeToBlackBy(c_leds[0], 480, 32);
+	 }
+	 */
+
+	 // ---------------------------------
+
+	// Actualiza la lista de efectos en la pagina web
+	sendAll();
+
+	Serial.println(" fin Setup ");
+
+
+
 }
 
 
@@ -459,53 +646,56 @@ pinMode(CLK_PIN, OUTPUT);// led clk  pin as output
  */
 void loop()
 {
-EVERY_N_MILLISECONDS(500) {                           // FastLED based non-blocking delay to update/display the sequence.
-     ledState=!ledState ;
-     digitalWrite(LED_BUILTIN, ledState );
-     
-    }
-   
-settingsServerTask();
-webSocket.loop();                           // handles websockets
+	EVERY_N_MILLISECONDS(500) {                           // FastLED based non-blocking delay to update/display the sequence.
+		ledState = !ledState;
+		digitalWrite(LED_BUILTIN, ledState);
+
+	}
+	h = hue;
+	settingsServerTask();
+	webSocket.loop();                           // handles websockets
+	EVERY_N_SECONDS(2) {
+		sendHeartBeat(); // envia el json de HB}
+	}
 
 
- // AutoRun();
-  // Comment AutoRun out and test examples seperately here
+	 // AutoRun();
+	  // Comment AutoRun out and test examples seperately here
 
-  //Dots2();
-  //RainbowTriangle();
-  //ShowFrame();
-  //Caleidoscope1();
-  // all oscillator based:
-  //Serial.println("dots1");
-  //for (int i = 0; i < 300; i++) { Dots1(); }
-  //for (int i = 0; i < 300; i++) { Dots2(); }
-  //Serial.println("slowmandala");
-  //SlowMandala();
-  //Serial.println("slowmandala2");
-  //SlowMandala2();
-  //Serial.println("slowmandala3");
-  //SlowMandala3();
-  //Serial.println("Mandala8");
-  //for (int i = 0; i < 300; i++) { Mandala8(); }
+	  //Dots2();
+	  //RainbowTriangle();
+	  //ShowFrame();
+	  //Caleidoscope1();
+	  // all oscillator based:
+	  //Serial.println("dots1");
+	  //for (int i = 0; i < 300; i++) { Dots1(); }
+	  //for (int i = 0; i < 300; i++) { Dots2(); }
+	  //Serial.println("slowmandala");
+	  //SlowMandala();
+	  //Serial.println("slowmandala2");
+	  //SlowMandala2();
+	  //Serial.println("slowmandala3");
+	  //SlowMandala3();
+	  //Serial.println("Mandala8");
+	  //for (int i = 0; i < 300; i++) { Mandala8(); }
 
-  // For discovering parameters of examples I reccomend to
-  // tinker with a renamed copy ...
+	  // For discovering parameters of examples I reccomend to
+	  // tinker with a renamed copy ...
 
-  // Call the current pattern function once, updating the 'leds' array
-  uint8_t arg1 = gPatternsAndArguments[gCurrentPatternNumber].mArg1;
-  uint8_t arg2 = gPatternsAndArguments[gCurrentPatternNumber].mArg2;
-  TwoArgumentPattern pat = gPatternsAndArguments[gCurrentPatternNumber].mPattern;
+	  // Call the current pattern function once, updating the 'leds' array
+	uint8_t arg1 = gPatternsAndArguments[gCurrentPatternNumber].mArg1;
+	uint8_t arg2 = gPatternsAndArguments[gCurrentPatternNumber].mArg2;
+	TwoArgumentPattern pat = gPatternsAndArguments[gCurrentPatternNumber].mPattern;
 
-  pat(arg1, arg2);
+	pat(arg1, arg2);
+	//hue += 4;
 
+	// send the 'leds' array out to the actual LED strip
+   // FastLED.show(); // los tengo dentro de las funciones
+	// insert a delay to keep the framerate modest
+  //  FastLED.delay(1000 / 120); // about sixty FPS
 
-  // send the 'leds' array out to the actual LED strip
- // FastLED.show(); // los tengo dentro de las funciones
-  // insert a delay to keep the framerate modest
-//  FastLED.delay(1000 / 120); // about sixty FPS
-
-  EVERY_N_SECONDS(100) { nextPattern(); } // change patterns periodically
+	EVERY_N_SECONDS(101) { nextPattern(); } // change patterns periodically
 }
 
 void nextPattern()
@@ -515,6 +705,7 @@ void nextPattern()
 	gCurrentPatternNumber = (gCurrentPatternNumber + 1) % numberOfPatterns;
 	Serial.print("funcion : \t");
 	Serial.println(gCurrentPatternNumber);
+	sendAll(); // lo pongo aqui , pero en realidad deberia ser solo cuando hay un cambio de efecto
 	
 }
 

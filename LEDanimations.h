@@ -956,7 +956,7 @@ void DrawVentilador(uint8_t centrox, uint8_t centroy, uint8_t radio, int angulo,
 	color.h = random8(200);
 	drawLineByAngle(centrox, centroy, angulo, 2, radio, color);
 	//blur2d((leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
-
+	FastLED.show();
 
 
 
@@ -965,16 +965,20 @@ void DrawVentilador(uint8_t centrox, uint8_t centroy, uint8_t radio, int angulo,
 }
 
 
-void diagonalFill() {
+void diagonalFill(byte nada, byte nada1) {
 	// ** Fill LED's with diagonal stripes
 	for (uint8 x = 0; x < (c_leds.Width() + c_leds.Height()); ++x)
 	{
 		c_leds.DrawLine(x - c_leds.Height(), c_leds.Height() - 1, x, 0, CHSV(h, 255, 255));
 		h += 16;
 	}
+	hue += 4;
+	FastLED.show();
+	fadeToBlackBy(c_leds[0], 480, 16);
 }
 
-void HorizontalStripes() {
+
+void HorizontalStripes(byte nada, byte nada1) {
 	// ** Fill LED's with horizontal stripes
 	for (uint8 y = 0; y<c_leds.Height(); ++y)
 	{
@@ -983,10 +987,14 @@ void HorizontalStripes() {
 
 		h += 16;
 	}
+	
 	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);// blur the individual circles
+	hue += 4;
+	FastLED.show();
+	fadeToBlackBy(c_leds[0], 480, 16);
 }
 
-void anillos() {
+void anillos(byte nada, byte nada1) {
 	// ** circulos concentricos
 	for (uint8 y = 0; y<c_leds.Height(); ++y)
 	{
@@ -996,4 +1004,47 @@ void anillos() {
 		h += 16;
 	}
 	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);// blur the individual circles
+	hue += 4;
+	FastLED.show();
+	fadeToBlackBy(c_leds[0], 480, 16);
 }
+
+void circulo1(byte nada,byte nada1) {
+	cir1.Update();
+	fadeToBlackBy(c_leds[0], 480, 32);
+	blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
+}
+
+void HorMirror(byte nada, byte nada1) {
+	HorizontalStripes(0,0);
+	hue += 4;
+	c_leds.HorizontalMirror();
+	FastLED.show();
+	fadeToBlackBy(c_leds[0], 480, 16);
+};
+
+void VertMirror(byte nada, byte nada1) {
+	HorizontalStripes(0,0);
+	hue += 4;
+	c_leds.VerticalMirror();
+	FastLED.show();
+	fadeToBlackBy(c_leds[0], 480, 16);
+};
+
+void QuadMirror(byte nada, byte nada1) {
+	HorizontalStripes(0,0);
+	hue += 4;
+	c_leds.QuadrantMirror();
+	FastLED.show();
+	fadeToBlackBy(c_leds[0], 480, 16);
+};
+
+void circulo2(byte nada, byte nada1) {
+	circleB1.Update();
+	circleB2.Update();
+	fadeToBlackBy(c_leds[0], 480, 32);
+	FastLED.show();
+	//blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
+}
+
+

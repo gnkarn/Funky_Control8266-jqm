@@ -20,6 +20,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         
         String info = ESP.getResetInfo();
         webSocket.sendTXT(num, info); //Handy for debugging
+		//sendAll(); // en caso de conexion actualiza pagina web con la lista de fectos
       }
         break;
         case WStype_TEXT:
@@ -45,6 +46,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                // EEPROM.write(0, myEffect);       //stores the variable but needs to be committed to EEPROM before being saved - this happens in the loop
                 lastChangeTime = millis();
                 eepromCommitted = false;
+				sendAll(); // hay que separar la actualizacion de la lista de este feedback 
                 }
              }
              if (text.startsWith("b")) {      // Hue

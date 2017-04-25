@@ -10,10 +10,10 @@
 
 #define DBG_OUTPUT_PORT Serial
 
-const char* pvhostname = "WIFIgus"; // SSid
+const char* pvhostname = "GNK_ESP1_AP"; // Nombre del ESP
 
 ESP8266WebServer server(80); // create the server object
-//MDNSResponder mdns;
+MDNSResponder mdns;
 ESP8266HTTPUpdateServer httpUpdater;
 
 void showWifiConfigAPMessage(void);
@@ -172,12 +172,12 @@ void startSettingsServer(void){
   server.begin();
   Serial.println("HTTP server started");
   //ArduinoOTA handles mdns service
- // if(!mdns.begin(pvhostname, WiFi.localIP())) {
- //   Serial.println("Error setting up MDNS responder!");
- // }
- // Serial.println("mDNS responder started");
+ if(!mdns.begin(pvhostname, WiFi.localIP())) {
+   Serial.println("Error setting up MDNS responder!");
+  }
+  Serial.println("mDNS responder started");
 
- //   mdns.addService("http", "tcp", 80);
+   mdns.addService("http", "tcp", 80);
 
 } 
 
@@ -194,7 +194,8 @@ void setupWiFi(void){
     // The extra parameters to be configured (can be either global or just in the setup)
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
-  WiFi.hostname(pvhostname);
+  WiFi.hostname(pvhostname); // get hostname
+  wifi_station_set_hostname("ESPxxx"); // deberia ser redundante - DEBUG
   WiFiManager wifiManager;
   wifiManager.setMinimumSignalQuality();
   wifiManager.setAPCallback(showWifiConfigAPMessage);
@@ -205,12 +206,12 @@ void setupWiFi(void){
   //if it does not connect it starts an access point with the specified name
   //here  "GNK_setup_AP"
   //and goes into a blocking loop awaiting configuration
-  //wifiManager.autoConnect("GNK_setup_AP");
+  wifiManager.autoConnect(pvhostname);
   //or use this for auto generated name ESP + ChipID
   //wifiManager.autoConnect();
 
 
-  if (!wifiManager.autoConnect("GNK_setup_AP")) { 
+  if (!wifiManager.autoConnect(pvhostname)) { 
     Serial.println("failed to connect and hit timeout");
     delay(3000);
     //reset and try again, or maybe put it to deep sleep

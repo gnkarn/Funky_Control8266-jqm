@@ -1,4 +1,5 @@
 
+
 /*
 -------------------------------------------------------------------
 Basic Helper functions:
@@ -1067,77 +1068,6 @@ void DrawPixel(uint8_t X0, uint8_t Y0, CHSV pixel)
 }
 
 
-class Circulo {
-	// Class Member Variables
-	// These are initialized at startup
-private:
-	unsigned long mpreviousMillis, mupdatet; 	// will store last time LED was updated
-	uint8_t mcrad, mcrpm, mcxc, mcyc;
-	bool mcdir;
-	uint8_t mcx, mcy;// pixel coordinates
-	uint16_t  mcrev;
-	CHSV mccolor;
-	uint8_t mcphi; // angulo del pixel
-
-public:
-	// cxc,cyc,crpm,crev,crad,ccolor,cdir : center coords, rpm, num of revs, radious , color ,dir
-	// Constructor - creates a Circulo  
-	// and initializes the member variables and state
-
-	Circulo(uint8_t cxc, uint8_t cyc, uint16_t crpm, uint8_t crev, uint8_t crad, CHSV ccolor, bool cdir)
-	{
-		mcxc = cxc;
-		mcyc = cyc;
-		mcrpm = crpm;
-		mcrev = crev;
-		mcrad = crad;
-		mcphi = 0;
-		mccolor = ccolor;
-		mcdir = cdir;// 0 horario 1 anti
-		mpreviousMillis = 0;  	// will store last time LED was updated
-		mupdatet = 256 / (crpm); // time in msecs  that justifies and update of 1 degree , based on rpm and matrix resolution , other alternative =7500 / (crpm*crad)
-	}
-
-	uint8_t getrad() { return mcrad; };
-	uint8_t getrpm() { return mcrpm; };
-	uint8_t getxc() { return mcxc; };
-	uint8_t getycrev() { return mcrev; };
-	void setxc(uint8_t cxc) { mcxc = cxc; };
-	void setyc(uint8_t cyc) { mcyc = cyc; };
-	void  setColor(CHSV ccolor) { mccolor = ccolor; };
-
-
-
-	//void Start() {};
-	//void Stop() {};
-	void ChgDir() {
-		mcdir = !mcdir;
-	}
-
-	void Update()
-	{
-		// check to see if it's time to change the state of the LED
-		unsigned long currentMillis = millis();
-
-		if (currentMillis - mpreviousMillis >= mupdatet)
-		{
-			Coordinates cpoint = Coordinates();
-
-			cpoint.fromPolar(mcrad, mcphi, mcxc, mcyc); // x + ((p_start + p_length)*(1+cos(p_angle))/2);
-														//y1 = y + ((p_start + p_length)*(1+sin(p_angle))/2);
-			uint8_t x1 = cpoint.getX(); // coordenadas punto 
-			uint8_t y1 = cpoint.getY();
-			c_leds(x1, y1) = mccolor;
-			//Serial.println(  x1, y1);
-
-			mpreviousMillis = currentMillis;  // Remember the time
-			mcphi = mcphi + 1 * (mcdir)-1 * (!mcdir); // incrementa en la direccion indicada
-			FastLED.show();
-
-		}
-	}
-
-};
 
 void circleBeat() {
 	// Use two out-of-sync sine waves
@@ -1150,86 +1080,18 @@ void circleBeat() {
 	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
 }
 
-class CircleBeat { //cxc,cyc,bpm,crad,ccolor, status, cdir 
-				   // Class Member Variables
-				   // These are initialized at startup
-private:
-	unsigned long mpreviousMillis, mupdatet; 	// will store last time LED was updated
-	uint8_t mcrad, mcbpm, mcxc, mcyc; // radio, BPM, center coords
-	bool mcdir;
-	uint8_t mcx, mcy;// pixel coordinates
-	bool  mcstatus;// 0 detenido , 1 activo
-	CHSV mccolor;
 
 
-public:
-	// cxc,cyc,crpm,crev,crad,ccolor,cdir : center coords, rpm, num of revs, radious , color ,dir
-	// Constructor - creates a Circulo  
-	// and initializes the member variables and state
 
-	CircleBeat(uint8_t cxc, uint8_t cyc, uint16_t cbpm, uint8_t crad, CHSV ccolor, bool cbstatus, bool cdir)
-	{
-		mcxc = cxc;
-		mcyc = cyc;
-		mcbpm = cbpm;
-		mcrad = crad;
-		mccolor = ccolor;
-		mcdir = cdir;// 0 horario 1 anti
-		mpreviousMillis = 0;  	// will store last time LED was updated
-		mcstatus = cbstatus = 0;
-
-	}
-
-	uint8_t getrad() { return mcrad; };
-	uint8_t getbpm() { return mcbpm; };
-	uint8_t getxc() { return mcxc; };
-	bool  getstatus() { return mcstatus; };
-	bool  getdir() { return mcdir; };
-	void setxc(uint8_t cxc) { mcxc = cxc; };
-	void setyc(uint8_t cyc) { mcyc = cyc; };
-	void  setColor(CHSV ccolor) { mccolor = ccolor; };
-	void setdir(bool cdir) { mcdir = cdir; };
-
-
-	void Start() { mcstatus = 1; };
-	void ChangeStatus() { mcstatus = !mcstatus; };
-	void Stop() { mcstatus = 0; };
-	void ChgDir() { mcdir = !mcdir; }
-
-	void Update()
-	{
-		// check to see if it's time to change the state of the LED
-		unsigned long currentMillis = millis();
-
-		if (currentMillis - mpreviousMillis >= mupdatet)
-		{
-			// Use two out-of-sync sine waves
-			//incorporar centro y radio para ubicarlo en cualquier posicion, pasarlo a clase
-			//uint8_t  r = beatsin8(5, 0, 19, 0, 0);
-
-			uint8_t  i = beatsin8(mcbpm, mcxc - mcrad, mcxc + mcrad, 0, 0);
-			uint8_t  j = beatsin8(mcbpm, mcyc - mcrad, mcyc + mcrad, 0, 64 * mcdir + 192 * !mcdir);// la misma frecuencia hace un circulo con y defasado 64 gira horario y defasado192 en anti
-			c_leds(i, j) = mccolor;
-
-			blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
-
-		}
-	}
-
-};
 
 void sendAll()
 {
-	Serial.print("SendAll : \t");
-
+	//Serial.print("SendAll : \t");
 	String json = "{";
-
-	json += "\"currentPattern\":{";
+	json += "\"messageName\":\"js_pat\"";// 
+	json += ",\"currentPattern\":{";
 	json += "\"index\":" + String(gCurrentPatternNumber);
 	json += ",\"name\":\"" + gPatternsAndArguments[gCurrentPatternNumber].mName + "\"}";
-
-	
-
 	json += ",\"patterns\":[";
 	for (uint8_t i = 0; i < numberOfPatterns; i++)
 	{
@@ -1243,5 +1105,24 @@ void sendAll()
 
 	// ESP8266WebServer.send(200, "text/json", json); // para webserver normal
 	webSocket.broadcastTXT(json); // para WS
+	//USE_SERIAL.printf("json  : \t" ); // debug
+	USE_SERIAL.print(json);			// debug
 	json = String();
 }
+
+void sendHeartBeat()
+{
+	//Serial.print("HB : \t");
+
+	String json = "{";
+	json += "\"messageName\":\"js_hbe\"";
+	json += "}";
+
+	// ESP8266WebServer.send(200, "text/json", json); // para webserver normal
+	//webSocket.broadcastTXT(json); // para WS
+	//USE_SERIAL.printf("json  : \t"); // debug
+	//USE_SERIAL.print(json);			// debug
+	json = String();
+}
+
+

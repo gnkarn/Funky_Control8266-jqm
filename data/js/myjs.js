@@ -1,48 +1,71 @@
   // primer script de efectos
   var ipValue;
-  var connection;
+  var WSconnection;
+  var myTimer1 = 0;
 
-
-  function WSConnect() {
+   function WSConnect() {
       var text = document.getElementById('webSocketCell').value;
       ipValue = text;
-      connection = new WebSocket(ipValue, ['arduino']);
-      connection.onopen = function() {
+      WSconnection = new WebSocket(ipValue, ['arduino']);
+      WSconnection.onopen = function() {
           document.getElementById("webSocketCell").style.backgroundColor = "lightgreen";
-      };
-      connection.onclose = function() {
-          document.getElementById("webSocketCell").style.backgroundColor = "red";
-      };
-      connection.onmessage = function(message) {
-         
-          JsonObj = JSON.parse(message.data);
-           console.log(JsonObj); // muestra el dato en la consola
-           alert(JsonObj); // para DEBUG 
-
+          //myStartTimer1();
+          myTimer1 = 0;
+          console.log("WebSocket: status", WSconnection.readyState);
           $("#status").text("Connecting...");
-
-          // clear pattern list
-          $("#menu-efectos").find("option").remove();
-
-          // load pattern list
-          for (var i = 0; i < JsonObj.patterns.length; i++) {
-              var pattern = JsonObj.patterns[i];
-              $("#menu-efectos").append("<option value='" + i + "'>" + pattern + "</option>");
-          }
-
-          // select the current pattern
-          $("#menu-efectos").val(data.currentPattern.index);
-
-
-
-          $("#status").text("Ready");
-
       };
 
-      console.log(text)
-      console.log("IP value changed to:" + ipValue);
+      WSconnection.onclose = function(evt) {
+          document.getElementById("webSocketCell").style.backgroundColor = "red";
+          console.log("WebSocket: closed", WSconnection.readyState);
+          //WSlost();
+          $("#status").text("Cerrando...");
+      };
 
 
+
+      WSconnection.onmessage = function(message) {
+          document.getElementById("webSocketCell").style.backgroundColor = "lightgreen";
+          var JsonObj = JSON.parse(message.data);
+
+          console.log(JsonObj); // muestra el dato en la consola
+          //alert(JsonObj); // para DEBUG 
+          //
+          // El mensaje es de un pattern ?
+          $("#status").text("mensaje...");
+          if (JsonObj.messageName == "js_pat") {
+
+
+              // clear pattern list
+              $("#menu-efectos").find("option").remove();
+
+              // load pattern list
+              for (var i = 0; i < JsonObj.patterns.length; i++) {
+                  var pattern = JsonObj.patterns[i];
+                  $("#menu-efectos").append("<option value='" + i + "'>" + pattern + "</option>");
+              }
+
+              // select the current pattern
+              $("#menu-efectos").val(JsonObj.currentPattern.index);
+              $("#_efecto").text("current pattern: " + JsonObj.currentPattern.name);
+
+              //$("#status").text("Ready");
+          };
+          // El mensaje es de un HB ?
+          if (JsonObj.messageName == "js_hbe") { // si recibo el HB resetea el timer
+              //myStopTimer1();
+              console.log('HB');
+              //myStartTimer1();
+              FlashHb();
+          };
+      };
+
+      WSconnection.onerror = function(evt) {
+          if (WSconnection.readyState == 1) {
+              console.log('ws onerror: ' + evt.type);
+              $("#status").text("error...");
+          };
+      };
   }
 
 
@@ -50,15 +73,56 @@
   function efectos(efecto_selected) {
       var toSend = "a" + efecto_selected;
       //alert(toSend);
-      connection.send(toSend);
+      WSconnection.send(toSend);
   }
 
   // fin script de efectos
 
+  //FlashHb -- 
+  //
+  function FlashHb() {
+      var div = document.getElementById("Hbeat");
+
+      if (div.style.background === "white") {
+          div.style.background = "black";
+      } else {
+          div.style.background = "white";
+      };
+  }
+
+
+  // Timer para actualizar reloj
+  var myVar = setInterval(myTimer, 1000);
+
+  function myTimer() {
+      var reloj = new Date();
+      document.getElementById("_tiempo").innerHTML = reloj.toLocaleTimeString();
+  }
+
+
+
+  function myStartTimer1() {
+      if (!window.myTimer1) { // evito dispararlo si ya lo hice
+          myTimer1 = setInterval(WSlost, 5000);
+      }
+  }
+
+  function myStopTimer1() {
+      clearInterval(myTimer1);
+  }
+
+  function WSlost() {
+      document.getElementById("webSocketCell").style.backgroundColor = "red";
+      console.log("WSLost connection");
+      //setTimeout(WSConnect, 5000);
+      myTimer1 = 0;
+  }
+
+
   // change on menu  jquery  document ready function -->
   $(function() {
 
-    
+
       $("select").on({
           change: function() {
               var efecto_selected = $(this).val();
@@ -91,7 +155,7 @@
           var value3 = $.fn.wheelColorPicker.rgbToHsv(200, 100, 50);
           $('#event-color2').val(hsvValue);
           console.log('w' + " " + hsvValue);
-          connection.send("w" + hsvValue);
+          WSconnection.send("w" + hsvValue);
 
       });
   });
@@ -104,6 +168,6 @@
       //console.log(slider_name + slider_value);
 
       /* Act on the event */
-      connection.send(slider_name + slider_value);
+      WSconnection.send(slider_name + slider_value);
       console.log(slider_name + " " + slider_value);
-  };
+  }
