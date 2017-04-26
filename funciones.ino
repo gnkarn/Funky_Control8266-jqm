@@ -1100,7 +1100,6 @@ void sendAll()
 			json += ",";
 	}
 	json += "]";
-
 	json += "}";
 
 	// ESP8266WebServer.send(200, "text/json", json); // para webserver normal
@@ -1117,11 +1116,10 @@ void sendHeartBeat()
 	String json = "{";
 	json += "\"messageName\":\"js_hbe\"";
 	json += "}";
-
-	// ESP8266WebServer.send(200, "text/json", json); // para webserver normal
-	//webSocket.broadcastTXT(json); // para WS
+	//ESP8266WebServer.send(200, "text/json", json); // para webserver normal
+	webSocket.broadcastTXT(json); // para WS
 	//USE_SERIAL.printf("json  : \t"); // debug
-	//USE_SERIAL.print(json);			// debug
+	USE_SERIAL.print(json);			// debug
 	json = String();
 }
 

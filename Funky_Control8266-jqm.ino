@@ -609,13 +609,26 @@ void setup() {
 	webSocket.begin();
 	webSocket.onEvent(webSocketEvent);
 
-	/* ----------------------------------------
+	Serial.print("Programa FunkyControl JQM-Async  Iniciado  ");// debug
+
+	FastLED.setBrightness(127);
+	FastLED.clear(true);
+	delay(200);
+	FastLED.showColor(CRGB::Red);
+	delay(200);
+	FastLED.showColor(CRGB::Lime);
+	delay(200);
+	FastLED.showColor(CRGB::Blue);
+	delay(200);
+	FastLED.showColor(CRGB::White);
+	delay(200);
+	
 	 drawEstrella(10, 12, 2, 0, 10, CHSV(HUE_RED, 255, 255));
 	 blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
 
 	 delay(2000);
 	 FastLED.clear(true);
-	 for (uint16_t i = 0; i <= 1024; i++)
+	 for (uint16_t i = 0; i <= 200; i++)
 	 {
 		 //DrawVentilador(10, 12, 5, i, CHSV(0, 255, 255));
 		 drawLineByAngle(10, 12, i, 0, 7, CHSV(i, 255, 255));
@@ -624,14 +637,14 @@ void setup() {
 		 FastLED.delay(2);
 		 fadeToBlackBy(c_leds[0], 480, 32);
 	 }
-	 for (uint16_t i = 0; i <= 5000; i++)
+	 for (uint16_t i = 0; i <= 500; i++)
 	 {
 		 circleBeat();
 		 FastLED.show();
 		 FastLED.delay(1);
 		 fadeToBlackBy(c_leds[0], 480, 32);
 	 }
-	 */
+	 
 
 	 // ---------------------------------
 
