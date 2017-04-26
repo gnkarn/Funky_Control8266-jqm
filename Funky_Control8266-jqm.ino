@@ -67,25 +67,31 @@ TODO:
 
  //ver // https://github.com/wvdv2002/ESP8266-LED-Websockets/blob/master/arduino/ledcontrol/ledcontrol.ino
  //falta incluir los efectos de ESP8266 FastledNoise
-
+//esta version incorpora el modo ASYNC de webserver y de websockets
+// https://github.com/me-no-dev/ESPAsyncWebServer#libraries-and-projects-that-use-asyncwebserver
+//wifi manager async  https://github.com/btomer/WiFiManager
 
 
 
 
 #include <ArduinoOTA.h>
+// NOTE: This requires btomer's fork of the WiFiManager library (https://github.com/btomer/WiFiManager)
+#define WIFI_MANAGER_USE_ASYNC_WEB_SERVER
 #include <WiFiManager.h>
+
 #include <ESP8266WiFi.h>
 #include <DNSServer.h>
 #include <WiFiUdp.h>
 #include <FastLED.h>
 #include <Hash.h>
 #include <EEPROM.h>
+#include <ESPAsyncWebServer.h>   // async mod
 #include <WebSockets.h>
 #include <WebSocketsServer.h>
 #include "SettingsServer.h"
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266SSDP.h>
-#include <ESP8266WebServer.h>
+//#include <ESP8266WebServer.h> // incluido en la version async de wifimanager
 #include <ArduinoJson\ArduinoJson.h>
 
 #include <FastLED_GFX.h>
