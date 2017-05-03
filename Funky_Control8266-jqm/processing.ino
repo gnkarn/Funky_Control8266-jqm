@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 /****The below two functions are needed for sending to Processing. */
 // Copy from here to the bottom.
 //--------------------
