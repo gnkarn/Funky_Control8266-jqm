@@ -20,7 +20,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         
         String info = ESP.getResetInfo();
         webSocket.sendTXT(num, info); //Handy for debugging
-		//sendAll(); // en caso de conexion actualiza pagina web con la lista de fectos
+		sendAll(); // en caso de conexion actualiza pagina web con la lista de fectos
       }
         break;
         case WStype_TEXT:

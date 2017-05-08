@@ -240,7 +240,7 @@ void fillnoise8a(byte nada , byte nada1) {
   // from frame-to-frame.  In order to reduce this, we can do some fast data-smoothing.
   // The amount of data smoothing we're doing depends on "speed".
   uint8_t dataSmoothing = 0;
-  speed = qadd8(speed,myparameter1/4);
+  speed = qadd8(0,myparameter1);
 
   if( speed < 50) {
     dataSmoothing = 200 - (speed * 4);
@@ -486,7 +486,8 @@ void Dots1(uint8_t color1, uint8_t color2) {
 	ShowFrame();
 
 	FastLED.delay(20);
-	HorizontalStream(125);
+	HorizontalStream(myparameter1); // antes scale
+	VerticalStream(myparameter1); // antes scale
 }
 
 // x and y based on 3 sine waves
@@ -495,7 +496,7 @@ void Dots2(uint8_t scale, uint8_t nada) {
 	Pixel((p[2] + p[0] + p[1]) / 3, (p[1] + p[3] + p[2]) / 3, osci[3]);
 	ShowFrame();
 	FastLED.delay(20);
-	HorizontalStream(scale);
+	HorizontalStream(myparameter1); // anstes scale
 }
 
 // beautifull but periodic
@@ -1042,7 +1043,7 @@ void QuadMirror(byte nada, byte nada1) {
 void circulo2(byte nada, byte nada1) {
 	circleB1.Update();
 	circleB2.Update();
-	fadeToBlackBy(c_leds[0], 480, 32);
+	fadeToBlackBy(c_leds[0], 480, myparameter1);
 	FastLED.show();
 	//blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
 }
