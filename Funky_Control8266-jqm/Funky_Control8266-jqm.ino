@@ -207,6 +207,7 @@ CRGBPalette16 targetPalette(CRGB::Black);
 uint8_t       colorLoop = 1;
 
 //Some Variables
+byte myOnOff = 0;					// general on off leds status
 byte myEffect = 1;                  //what animation/effect should be displayed
 
 byte myHue = 33;                    //I am using HSV, the initial settings display something like "warm white" color at the first start
@@ -460,6 +461,7 @@ typedef struct {
 } TwoArgumentPatterWithArgumentValues;
 
 TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
+	{ OnOff			,"OnOff",		0	/*nada */	, 0 /*nada */ },
 	{ Dots1			,"Dots1",		1	/*color1 */	, 1 /*color2 */ },
 	{ Dots2			,"Dots2",		125 /*scale*/	, 0 /*no se usa*/},
 	{ SlowMandala2,	"SlowMandala2",	127 /*dim*/		, 0 /*no se usa*/},
@@ -593,7 +595,8 @@ void setup() {
 	LEDS.showColor(CHSV(myHue, mySaturation, myValue));
 	// fin setup desde ledcontrol.8266 matriz-jqm
 
-	WiFi.disconnect(); // Borra ssid y password 
+	// Si quiero siempre activar el AP entonces habiloitar esta linea
+	//WiFi.disconnect(); // Borra ssid y password 
 
 	Serial.println();
 	Serial.print(F("Heap: ")); Serial.println(system_get_free_heap_size());

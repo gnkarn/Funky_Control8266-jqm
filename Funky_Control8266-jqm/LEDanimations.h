@@ -475,6 +475,10 @@ void LedsNoise (byte nada,byte nada1)
 
 // animaciones pasadas desde funciones
 
+void OnOff(uint8_t nada1, uint8_t nada2) {
+	FastLED.clear(myOnOff);
+}
+
 // 2 oscillators flying arround one ;)
 void Dots1(uint8_t color1, uint8_t color2) {
 	MoveOscillators();
@@ -487,7 +491,7 @@ void Dots1(uint8_t color1, uint8_t color2) {
 
 	FastLED.delay(20);
 	HorizontalStream(myparameter1); // antes scale
-	VerticalStream(myparameter1); // antes scale
+	
 }
 
 // x and y based on 3 sine waves

@@ -36,6 +36,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
             String text = String((char *) &payload[0]);
 
+			if (text.startsWith("x")) {      // on off
+				String xVal = (text.substring(text.indexOf("x") + 1, text.length()));
+				if (myOnOff != xVal.toInt()) {
+					myOnOff = xVal.toInt();
+					//EEPROM.write(1, myOnOff);
+					lastChangeTime = millis();
+					eepromCommitted = false;
+				}
+			}
+
              if (text.startsWith("a")) {      // efectos
                String xVal = (text.substring(text.indexOf("a") + 1, text.length()));
                 flickerLed = random(0,NUM_LEDS-1);
@@ -54,7 +64,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 if (myHue != xVal.toInt()) {
                 myHue = xVal.toInt();
                 rainbowHue = myHue;
-                EEPROM.write(1, myHue);
+               // EEPROM.write(1, myHue);
                 lastChangeTime = millis();
                 eepromCommitted = false;
                 }
@@ -63,7 +73,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                String xVal = (text.substring(text.indexOf("c") + 1, text.length()));
                 if (mySaturation != xVal.toInt()) {
                 mySaturation = xVal.toInt();
-                EEPROM.write(2, mySaturation);
+                //EEPROM.write(2, mySaturation);
                 lastChangeTime = millis();
                 eepromCommitted = false;
                 }
@@ -72,7 +82,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                String xVal = (text.substring(text.indexOf("d") + 1, text.length()));
                 if (myValue != xVal.toInt()) {
                 myValue = xVal.toInt();
-                EEPROM.write(3, myValue);
+                //EEPROM.write(3, myValue);
                 lastChangeTime = millis();
                 eepromCommitted = false;
                 }
@@ -81,8 +91,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                String xVal = (text.substring(text.indexOf("e") + 1, text.length()));
                 if (myparameter1 != xVal.toInt()) {
                 myparameter1 = xVal.toInt();
-                EEPROM.write(4, myparameter1&&255);
-                EEPROM.write(5, myparameter1/256);
+                //EEPROM.write(4, myparameter1&&255);
+                //EEPROM.write(5, myparameter1/256);
                 lastChangeTime = millis();
                 eepromCommitted = false;
                 }

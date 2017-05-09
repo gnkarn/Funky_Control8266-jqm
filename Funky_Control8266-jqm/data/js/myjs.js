@@ -164,6 +164,7 @@
       var slider_value = newValue;
       var slider_name = newName.substr(6, 7); // toma la ultima letra del nombre del slider
       //alert(slider_value);
+     
       //console.log(slider_value);
       //console.log(slider_name + slider_value);
 

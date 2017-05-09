@@ -195,7 +195,8 @@ void setupWiFi(void){
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
   WiFi.hostname(pvhostname); // get hostname
-  wifi_station_set_hostname("ESPxxx"); // deberia ser redundante - DEBUG
+  // wifi_station_set_hostname("ESPxxx"); // deberia ser redundante - DEBUG
+  
   WiFiManager wifiManager;
   wifiManager.setMinimumSignalQuality();
   wifiManager.setAPCallback(showWifiConfigAPMessage);

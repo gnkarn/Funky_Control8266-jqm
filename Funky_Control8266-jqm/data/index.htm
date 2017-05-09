@@ -41,6 +41,11 @@ mejorado por GNK  2016  -->
             <div class="ui-field-contain">
                 <label for="text1">WebSocket IP</label>
                 <input type="text" id="webSocketCell" value="ws://192.168.0.18:81/" onblur='WSConnect()' />
+
+                <select data-role="slider" name ="sliderx" id="on-off" onchange="slider_react(this.value ,this.name)" data-highlight="true"  >
+                    <option value="0">off</option>
+                    <option value="1">on</option>
+                </select>
             </div>
             <div class="ui-mini ui-grid-d my-breakpoint">
                 <!--botones 
@@ -103,15 +108,15 @@ mejorado por GNK  2016  -->
             <!--slider 2,3,4 -->
             <div class="ui-field-contain">
                 <label for="slider2-range">Saturation</label>
-                <input type="range" id="slider2-range" value="92" min="0" max="255" step="1" name="Sliderc" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider2" />
+                <input type="range"  value="92" min="0" max="255" step="1" name="Sliderc" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider2" />
             </div>
             <div class="ui-field-contain">
                 <label for="slider3-range">Value</label>
-                <input type="range" id="slider3-range" value="168" min="0" max="255" step="1" name="sliderd" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider3" />
+                <input type="range"  value="168" min="0" max="255" step="1" name="sliderd" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider3" />
             </div>
             <div class="ui-field-contain">
                 <label for="slider4-range">Parametro1</label>
-                <input type="range" id="slider4-range" value="168" min="0" max="255" step="1" name="slidere" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider4" />
+                <input type="range"  value="168" min="0" max="255" step="1" name="slidere" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider4" />
             </div>
         </div>
         <!-- color picker -->
