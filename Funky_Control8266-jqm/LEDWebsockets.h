@@ -155,3 +155,49 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     }
 
 }
+
+void herokuWsEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
+	switch (type) {
+	case WStype_DISCONNECTED:
+		USE_SERIAL.printf("[%u] Disconnected!\n", num);
+		break;
+	case WStype_CONNECTED:
+	{
+		IPAddress ip = webSocket.remoteIP(num);
+		USE_SERIAL.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+
+		// send message to client
+		String websocketStatusMessage = "H" + String(myHue) + ",S" + String(mySaturation) + ",V" + String(myValue) + ",W" + String(myparameter1); //Sends a string with the HSV and white led  values to the client website when the conection gets established
+		webSocket.sendTXT(num, websocketStatusMessage);
+
+		String info = ESP.getResetInfo();
+		webSocket.sendTXT(num, info); //Handy for debugging
+		sendAll(); // en caso de conexion actualiza pagina web con la lista de fectos
+	}
+	break;
+	case WStype_TEXT:
+	{
+		USE_SERIAL.printf("[%u] Received from Heroku: %s\n", num, payload);
+
+
+		// send message to client
+		// webSocket.sendTXT(num, "message here");
+
+		// send data to all connected clients
+		// webSocket.broadcastTXT("message here");
+
+		String text = String((char *)&payload[0]);
+		
+		break;
+	}
+	case WStype_BIN:
+		//USE_SERIAL.printf("[%u] get binary lenght: %u\n", num, lenght);
+		hexdump(payload, lenght);
+
+		// send message to client
+		// webSocket.sendBIN(num, payload, lenght);
+		break;
+	}
+
+}
+}

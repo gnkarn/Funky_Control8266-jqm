@@ -111,8 +111,13 @@ extern "C" {
 #include "user_interface.h"
 }
 
-
-
+// websocket client library , used to connect with Heroku ws server
+#include "WebSocketsClient.h"
+WebSocketsClient herokuWs;
+#define HEARTBEAT_INTERVAL 25000
+uint64_t heartbeatTimestamp = 0;
+bool isConnectedH = false; // connected to Heroku?
+String herokuHost = "app-gnk-p5js.herokuapp.com";
 
 // define your LED hardware setup here
 #define DATA_PIN    4// D2sale x gpio 04
@@ -661,7 +666,12 @@ void setup() {
 
 	Serial.println(" fin Setup ");
 
-
+	// Websocket client setup , to connect with Heroku server
+	// matrix data will come from this server
+	// pending to implement a Heart beat with Heroku
+	herokuWs.beginSocketIO(herokuHost , 81);
+	//webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
+	herokuWs.onEvent(herokuWsEvent);
 
 }
 
@@ -723,6 +733,7 @@ void loop()
   //  FastLED.delay(1000 / 120); // about sixty FPS
 
 	EVERY_N_SECONDS(101) { nextPattern(); } // change patterns periodically
+	herokuHeartBeat(); // send HB to Heroku WS server
 }
 
 void nextPattern()
@@ -735,6 +746,13 @@ void nextPattern()
 	sendAll(); // lo pongo aqui , pero en realidad deberia ser solo cuando hay un cambio de efecto
 	
 }
-
-
-
+void herokuHeartBeat() {
+	if (isConnectedH) {
+		uint64_t now = millis();
+		if ((now - heartbeatTimestamp) > HEARTBEAT_INTERVAL) {
+			heartbeatTimestamp = now;
+			// socket.io heartbeat message
+			herokuWs.sendTXT("ESP-HeartBeat");
+		}
+	}
+}
