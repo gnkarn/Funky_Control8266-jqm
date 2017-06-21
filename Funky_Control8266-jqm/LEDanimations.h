@@ -32,11 +32,12 @@ int wrap(int step) {
 }
 
 
-void one_color_allHSV(int ahue, int abright) {                // SET ALL LEDS TO ONE COLOR (HSV)
+void one_color_allHSV(byte ahue, byte abright) {                // SET ALL LEDS TO ONE COLOR (HSV)
+	ahue = myHue;
+	abright = myBrightness;
+	fill_solid(c_leds[0], CUSTOM_NUM_LEDS /*number of leds*/, CHSV(ahue, mySaturation, abright));
   
-    //   leds[i] = CHSV(ahue, 254, abright);
-
-    ledSet(0,CUSTOM_NUM_LEDS)= CHSV(ahue, 254, abright);
+	FastLED.show();
 }
 
 void ripple() {

@@ -19,7 +19,7 @@ ESP8266HTTPUpdateServer httpUpdater;
 void showWifiConfigAPMessage(void);
 
 void handle_root(){
-  server.send(200, "text/plain", "Woodblock lighting");
+  server.send(200, "text/plain", "Cuadro de leds GNK");
   delay(100);
 }
 

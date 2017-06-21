@@ -97,6 +97,19 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 eepromCommitted = false;
                 }
              }
+
+			  if (text.startsWith("y")) {   // Brightness
+				  String xVal = (text.substring(text.indexOf("y") + 1, text.length()));
+				  if (myBrightness != xVal.toInt()) {
+					  myBrightness = xVal.toInt();
+					  FastLED.setBrightness(myBrightness);
+					  //EEPROM.write(4, myBrightness&&255);
+					  //EEPROM.write(5, myBrightness/256);
+					  lastChangeTime = millis();
+					  eepromCommitted = false;
+				  }
+			  }
+
              if (text.startsWith("w")) {   // wheel color picker aca hacer la conversion del texto hex recibido a rgb , usando strtol()
                
           //uint32_t xVal = (uint32_t)strtol((const char *)&payload[1], NULL, 16);

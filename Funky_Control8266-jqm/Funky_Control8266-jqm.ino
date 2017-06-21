@@ -173,8 +173,8 @@ uint8_t h;// color para funciones
 // seteo de variables desde ledcontrol8266-matriz-jqm
 // revisar redindancia y luego optimizar
 
-#define MILLI_AMPERE      1000    // IMPORTANT: set here the max milli-Amps of your power supply 5V 2A = 2000
-#define FRAMES_PER_SECOND  200    // here you can control the speed. 
+#define MILLI_AMPERE      1500    // IMPORTANT: set here the max milli-Amps of your power supply 5V 2A = 2000
+#define FRAMES_PER_SECOND  100    // here you can control the speed. 
 int ledMode = 4;                  // this is the starting palette
 const uint8_t kMatrixWidth = WIDTH;
 const uint8_t kMatrixHeight = HEIGHT;
@@ -216,6 +216,7 @@ byte myValue = 255;
 String  myrgb = "(0,0,0)";            // color desde websockets color picker
 unsigned int myparameter1 = 0;			// usef for speed change on noise effect as a global var
 byte rainbowHue = myHue;            //Using this so the rainbow effect doesn't overwrite the hue set on the website
+byte	myBrightness = BRIGHTNESS; // global brightness changable from screen
 
 int flickerTime = random(200, 400);
 int flickerLed;
@@ -241,7 +242,7 @@ CRGB leds[NUM_LEDS]; // matriz render
 
 // your display buffer for your not 16*16 setup
 CRGB leds2[CUSTOM_NUM_LEDS]; // matriz real
-CRGBSet ledSet(leds, NUM_LEDS);    //Trying LEDSet from FastLED
+CRGBSet ledSet(leds2, CUSTOM_NUM_LEDS);    //Trying LEDSet from FastLED
 
 // CRGB  tempLed[CUSTOM_WIDTH*CUSTOM_HEIGHT];// debug eliminado
 
@@ -503,6 +504,8 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ VertMirror		,"VertMirror",	0/* nada*/		,0	 /* nada1*/ },
 	{ QuadMirror		,"QuadMirror",	0/* nada*/		,0	 /* nada1*/ },
 	{ circulo2		,"circulo2",	0/* nada*/		,0	 /* nada1*/ },
+	{ one_color_allHSV ,"one_color_allHSV",	41/* h*/		,180	 /* b*/ },
+
 	
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 
@@ -565,7 +568,7 @@ void setup() {
 	FastLED.setBrightness(BRIGHTNESS);
 	set_max_power_in_volts_and_milliamps(5, MILLI_AMPERE);
 	LEDColorCorrection{ TypicalSMD5050 };
-	FastLED.setDither(0);
+	FastLED.setDither(1);
 	// just for debugging:
 
 

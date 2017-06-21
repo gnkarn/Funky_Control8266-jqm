@@ -1070,7 +1070,6 @@ void DrawPixel(uint8_t X0, uint8_t Y0, CHSV pixel)
 }
 
 
-
 void circleBeat() {
 	// Use two out-of-sync sine waves
 	//incorporar centro y radio para ubicarlo en cualquier posicion, pasarlo a clase
@@ -1081,9 +1080,6 @@ void circleBeat() {
 
 	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
 }
-
-
-
 
 
 void sendAll()
@@ -1107,7 +1103,7 @@ void sendAll()
 	// ESP8266WebServer.send(200, "text/json", json); // para webserver normal
 	webSocket.broadcastTXT(json); // para WS
 	//USE_SERIAL.printf("json  : \t" ); // debug
-	USE_SERIAL.print(json);			// debug
+	//USE_SERIAL.print(json);			// debug
 	json = String();
 }
 
@@ -1120,8 +1116,7 @@ void sendHeartBeat()
 	json += "}";
 	//ESP8266WebServer.send(200, "text/json", json); // para webserver normal
 	webSocket.broadcastTXT(json); // para WS
-	//USE_SERIAL.printf("json  : \t"); // debug
-	USE_SERIAL.print(json);			// debug
+	//USE_SERIAL.print(json);			// debug
 	json = String();
 }
 
