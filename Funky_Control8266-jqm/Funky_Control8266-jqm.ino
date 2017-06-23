@@ -94,7 +94,7 @@ TODO:
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266SSDP.h>
 //#include <ESP8266WebServer.h> // incluido en la version async de wifimanager
-#include <ArduinoJson\ArduinoJson.h>
+#include <ArduinoJson.h>
 
 #include <FastLED_GFX.h>
 // para integrar MAtrix example-APA102
@@ -112,12 +112,14 @@ extern "C" {
 }
 
 // websocket client library , used to connect with Heroku ws server
-#include "WebSocketsClient.h"
-WebSocketsClient herokuWs;
+//#include "WebSocketsClient.h"
+#include <SocketIoClient\SocketIoClient.h>
+SocketIoClient herokuWs;
 #define HEARTBEAT_INTERVAL 25000
 uint64_t heartbeatTimestamp = 0;
 bool isConnectedH = false; // connected to Heroku?
-String herokuHost = "app-gnk-p5js.herokuapp.com";
+//String herokuHost = "app-gnk-p5js.herokuapp.com"; // for websocketclient
+
 
 // define your LED hardware setup here
 #define DATA_PIN    4// D2sale x gpio 04
@@ -669,10 +671,10 @@ void setup() {
 	// Websocket client setup , to connect with Heroku server
 	// matrix data will come from this server
 	// pending to implement a Heart beat with Heroku
-	herokuWs.beginSocketIO(herokuHost , 81);
+	// herokuWs.beginSocketIO(herokuHost , 81); // for the  websocket client
+	 herokuWs.begin("app-gnk-p5js.herokuapp.com" , 81); // for socket.io  client
 	//webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
-	herokuWs.onEvent(herokuWsEvent);
-
+	herokuWs.on("msgFromServer", herokuWsEventVideo);
 }
 
 
