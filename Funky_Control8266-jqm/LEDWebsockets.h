@@ -156,9 +156,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
 }
 
-void  herokuWsEventVideo(const char * payload, size_t lenght) {
+void  wsVideoEvent(const char * payload, size_t lenght) {
 	// this to receive a message from the Heroku Server 
-	USE_SERIAL.printf("[%u] Received from Heroku: %s\n", payload);
+	USE_SERIAL.printf("[%u] Received from Heroku (video): %s\n", payload);
 	String text = String((char *)&payload[0]);
 
 	// if current efect is video continue else jump
@@ -181,3 +181,20 @@ void  herokuWsEventVideo(const char * payload, size_t lenght) {
 
 }
 	
+void  wsTimeEvent(const char * payload, size_t lenght) {
+	yield();
+	char text = payload[0];
+	USE_SERIAL.printf("[%u] Received from Heroku (Time): %s\n", text);
+}
+
+void  wsConnectEvent(const char * payload, size_t lenght) {
+	
+	yield();
+	char text = payload[0];
+	USE_SERIAL.printf("[%u] Received from Heroku (connect): %s\n", text);
+}
+
+void wsDisconnectedEvent(const char * payload, size_t lenght) {
+	char text = payload[0];
+	USE_SERIAL.printf("[%u] disconnected from Heroku (disconnected): %s\n", text);
+}

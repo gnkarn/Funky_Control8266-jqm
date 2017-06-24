@@ -671,10 +671,16 @@ void setup() {
 	// Websocket client setup , to connect with Heroku server
 	// matrix data will come from this server
 	// pending to implement a Heart beat with Heroku
-	// herokuWs.beginSocketIO(herokuHost , 81); // for the  websocket client
-	 herokuWs.begin("app-gnk-p5js.herokuapp.com" , 81); // for socket.io  client
+	// herokuWs.beginSocketIO(herokuHost , 80); // for the  websocket client library
+
+	 herokuWs.begin("app-gnk-p5js.herokuapp.com" , 80); // for socket.io  client library
+
 	//webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
-	herokuWs.on("msgFromServer", herokuWsEventVideo);
+	herokuWs.on("msgFromServer", wsVideoEvent);
+	herokuWs.on("time", wsTimeEvent);
+	herokuWs.on("connect", wsConnectEvent); 
+	herokuWs.on("disconnected", wsDisconnectedEvent);
+	
 }
 
 
@@ -692,9 +698,9 @@ void loop()
 	}
 	h = hue;
 	settingsServerTask();
-	webSocket.loop();                           // handles websockets
-	EVERY_N_SECONDS(2) {
-		sendHeartBeat(); // envia el json de HB}
+	webSocket.loop();// handles websockets
+	EVERY_N_SECONDS(5) {
+		sendHeartBeat(); // envia el json de HB} al cliente WEB
 	}
 
 
@@ -735,6 +741,7 @@ void loop()
   //  FastLED.delay(1000 / 120); // about sixty FPS
 
 	EVERY_N_SECONDS(101) { nextPattern(); } // change patterns periodically
+	herokuWs.loop(); // handles Heroku socket.io loop
 	herokuHeartBeat(); // send HB to Heroku WS server
 }
 
@@ -754,7 +761,7 @@ void herokuHeartBeat() {
 		if ((now - heartbeatTimestamp) > HEARTBEAT_INTERVAL) {
 			heartbeatTimestamp = now;
 			// socket.io heartbeat message
-			herokuWs.sendTXT("ESP-HeartBeat");
+			herokuWs.emit("ESP-HeartBeat");
 		}
 	}
 }
