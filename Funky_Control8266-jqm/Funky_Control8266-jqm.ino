@@ -102,6 +102,11 @@ TODO:
 // ver https://github.com/AaronLiddiment/LEDMatrix/wiki
 #include <coordinates.h> // ahora incluido como una libreria
 
+// json setup ofr the Video matrix json object
+//sized using  https://bblanchon.github.io/ArduinoJson/assistant/index.html
+#define SENSORDATA_JSON_SIZE (JSON_ARRAY_SIZE(480) + 2 * JSON_OBJECT_SIZE(0) + 479 * JSON_OBJECT_SIZE(3) + 8740)
+
+
 
 int  ledState = LOW;
 
@@ -112,9 +117,12 @@ extern "C" {
 }
 
 // websocket client library , used to connect with Heroku ws server
-//#include "WebSocketsClient.h"
-#include <SocketIoClient\SocketIoClient.h>
-SocketIoClient herokuWs;
+#include "WebSocketsClient.h"
+
+//#include <SocketIoClient\SocketIoClient.h>
+// tested with this library but ends with exception 28 https://github.com/timum-viw/socket.io-client
+
+WebSocketsClient herokuWs;
 #define HEARTBEAT_INTERVAL 25000
 uint64_t heartbeatTimestamp = 0;
 bool isConnectedH = false; // connected to Heroku?
@@ -513,7 +521,7 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ circulo2		,"circulo2",	0/* nada*/		,0	 /* nada1*/ },
 	{ one_color_allHSV ,"one_color_allHSV",	41/* h*/		,180	 /* b*/ },
 
-	
+
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 
 };
@@ -529,7 +537,7 @@ const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAnd
  */
 void setup() {
 
-	
+
 
 	// Open serial connection, 115200 baud
 	pinMode(LED_BUILTIN, OUTPUT);// led pin as output
@@ -637,33 +645,33 @@ void setup() {
 	delay(200);
 	FastLED.showColor(CRGB::White);
 	delay(200);
-	
-	 drawEstrella(10, 12, 2, 0, 10, CHSV(HUE_RED, 255, 255));
-	 blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
 
-	 delay(2000);
-	 FastLED.clear(true);
-	 for (uint16_t i = 0; i <= 200; i++)
-	 {
-		 //DrawVentilador(10, 12, 5, i, CHSV(0, 255, 255));
-		 drawLineByAngle(10, 12, i, 0, 7, CHSV(i, 255, 255));
-		 drawLineByAngle(10, 12, i + 128, 0, 7, CHSV(i, 255, 255));
-		 FastLED.show();
-		 FastLED.delay(2);
-		 fadeToBlackBy(c_leds[0], 480, 32);
-	 }
-	 for (uint16_t i = 0; i <= 500; i++)
-	 {
-		 circleBeat();
-		 FastLED.show();
-		 FastLED.delay(1);
-		 fadeToBlackBy(c_leds[0], 480, 32);
-	 }
-	 
+	drawEstrella(10, 12, 2, 0, 10, CHSV(HUE_RED, 255, 255));
+	blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
 
-	 // ---------------------------------
+	delay(2000);
+	FastLED.clear(true);
+	for (uint16_t i = 0; i <= 200; i++)
+	{
+		//DrawVentilador(10, 12, 5, i, CHSV(0, 255, 255));
+		drawLineByAngle(10, 12, i, 0, 7, CHSV(i, 255, 255));
+		drawLineByAngle(10, 12, i + 128, 0, 7, CHSV(i, 255, 255));
+		FastLED.show();
+		FastLED.delay(2);
+		fadeToBlackBy(c_leds[0], 480, 32);
+	}
+	for (uint16_t i = 0; i <= 500; i++)
+	{
+		circleBeat();
+		FastLED.show();
+		FastLED.delay(1);
+		fadeToBlackBy(c_leds[0], 480, 32);
+	}
 
-	// Actualiza la lista de efectos en la pagina web
+
+	// ---------------------------------
+
+   // Actualiza la lista de efectos en la pagina web
 	sendAll();
 
 	Serial.println(" fin Setup ");
@@ -673,14 +681,12 @@ void setup() {
 	// pending to implement a Heart beat with Heroku
 	// herokuWs.beginSocketIO(herokuHost , 80); // for the  websocket client library
 
-	 herokuWs.begin("app-gnk-p5js.herokuapp.com" , 80); // for socket.io  client library
+	herokuWs.beginSocketIO("app-gnk-p5js.herokuapp.com", 80); // for socket.io  client library
 
-	//webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
-	herokuWs.on("msgFromServer", wsVideoEvent);
-	herokuWs.on("time", wsTimeEvent);
-	herokuWs.on("connect", wsConnectEvent); 
-	herokuWs.on("disconnected", wsDisconnectedEvent);
+   //webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
+	herokuWs.onEvent(wsVideoEvent);
 	
+
 }
 
 
@@ -704,30 +710,30 @@ void loop()
 	}
 
 
-	 // AutoRun();
-	  // Comment AutoRun out and test examples seperately here
+	// AutoRun();
+	 // Comment AutoRun out and test examples seperately here
 
-	  //Dots2();
-	  //RainbowTriangle();
-	  //ShowFrame();
-	  //Caleidoscope1();
-	  // all oscillator based:
-	  //Serial.println("dots1");
-	  //for (int i = 0; i < 300; i++) { Dots1(); }
-	  //for (int i = 0; i < 300; i++) { Dots2(); }
-	  //Serial.println("slowmandala");
-	  //SlowMandala();
-	  //Serial.println("slowmandala2");
-	  //SlowMandala2();
-	  //Serial.println("slowmandala3");
-	  //SlowMandala3();
-	  //Serial.println("Mandala8");
-	  //for (int i = 0; i < 300; i++) { Mandala8(); }
+	 //Dots2();
+	 //RainbowTriangle();
+	 //ShowFrame();
+	 //Caleidoscope1();
+	 // all oscillator based:
+	 //Serial.println("dots1");
+	 //for (int i = 0; i < 300; i++) { Dots1(); }
+	 //for (int i = 0; i < 300; i++) { Dots2(); }
+	 //Serial.println("slowmandala");
+	 //SlowMandala();
+	 //Serial.println("slowmandala2");
+	 //SlowMandala2();
+	 //Serial.println("slowmandala3");
+	 //SlowMandala3();
+	 //Serial.println("Mandala8");
+	 //for (int i = 0; i < 300; i++) { Mandala8(); }
 
-	  // For discovering parameters of examples I reccomend to
-	  // tinker with a renamed copy ...
+	 // For discovering parameters of examples I reccomend to
+	 // tinker with a renamed copy ...
 
-	  // Call the current pattern function once, updating the 'leds' array
+	 // Call the current pattern function once, updating the 'leds' array
 	uint8_t arg1 = gPatternsAndArguments[gCurrentPatternNumber].mArg1;
 	uint8_t arg2 = gPatternsAndArguments[gCurrentPatternNumber].mArg2;
 	TwoArgumentPattern pat = gPatternsAndArguments[gCurrentPatternNumber].mPattern;
@@ -753,7 +759,7 @@ void nextPattern()
 	Serial.print("funcion : \t");
 	Serial.println(gCurrentPatternNumber);
 	sendAll(); // lo pongo aqui , pero en realidad deberia ser solo cuando hay un cambio de efecto
-	
+
 }
 void herokuHeartBeat() {
 	if (isConnectedH) {
@@ -761,7 +767,7 @@ void herokuHeartBeat() {
 		if ((now - heartbeatTimestamp) > HEARTBEAT_INTERVAL) {
 			heartbeatTimestamp = now;
 			// socket.io heartbeat message
-			herokuWs.emit("ESP-HeartBeat");
+			herokuWs.sendTXT("ESP-HeartBeat");
 		}
 	}
 }
