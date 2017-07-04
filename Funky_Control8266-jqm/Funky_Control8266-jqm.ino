@@ -126,7 +126,8 @@ WebSocketsClient herokuWs;
 #define HEARTBEAT_INTERVAL 25000
 uint64_t heartbeatTimestamp = 0;
 bool isConnectedH = false; // connected to Heroku?
-//String herokuHost = "app-gnk-p5js.herokuapp.com"; // for websocketclient
+#define  ESP_HeartBeat "2"
+String herokuHost = "app-gnk-p5js.herokuapp.com"; // for websocketclient
 
 
 // define your LED hardware setup here
@@ -548,6 +549,8 @@ void setup() {
 	pinMode(CLK_PIN, OUTPUT);// led clk  pin as output
 
 	Serial.begin(115200);
+	// to enable arduino debuger
+	Serial.setDebugOutput(true);
 
 	// -------------Solo un ejemplo aun no lo estoy usando ----------------
 	// Step 1: DEfinir Json buffer :Reserve memory space
@@ -681,11 +684,12 @@ void setup() {
 	// pending to implement a Heart beat with Heroku
 	// herokuWs.beginSocketIO(herokuHost , 80); // for the  websocket client library
 
-	herokuWs.beginSocketIO("app-gnk-p5js.herokuapp.com", 80); // for socket.io  client library
-
+	//herokuWs.beginSocketIO("app-gnk-p5js.herokuapp.com", 80); // for socket.io  client library
+	//herokuWs.beginSocketIO(herokuHost, 80);
+	herokuWs.begin(herokuHost, 80);
    //webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
 	herokuWs.onEvent(wsVideoEvent);
-	
+
 
 }
 
@@ -761,13 +765,4 @@ void nextPattern()
 	sendAll(); // lo pongo aqui , pero en realidad deberia ser solo cuando hay un cambio de efecto
 
 }
-void herokuHeartBeat() {
-	if (isConnectedH) {
-		uint64_t now = millis();
-		if ((now - heartbeatTimestamp) > HEARTBEAT_INTERVAL) {
-			heartbeatTimestamp = now;
-			// socket.io heartbeat message
-			herokuWs.sendTXT("ESP-HeartBeat");
-		}
-	}
-}
+

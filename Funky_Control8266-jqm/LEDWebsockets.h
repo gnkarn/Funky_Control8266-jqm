@@ -3,6 +3,53 @@ the code here http://www.whatimade.today/esp8266-on-websockets-mdns-ota-and-leds
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
+void processResponse(char* response) {
+	//DynamicJsonBuffer jsonBuffer(SENSORDATA_JSON_SIZE);
+	DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(3) + 100);
+	// Format of date message 42["time","{\"msgName\":\"time\",\"type\":3,\"message\":\"18:15:13 GMT+0000 (UTC)\"}"]
+
+	//String json = String ((char *)payload[0]);
+	String text = ((char *)&response[0]);
+
+	//int pos = text.indexOf('{');      // position of { json object start
+	//String json2 = text.substring(pos, text.length() - 2) ;     //* get from "´{" to the jason obj  end
+	
+	//json2 = json2.c_str(); // con IO
+	String json2 = text;
+	Serial.println("json2 :");
+	Serial.println(json2);
+	
+
+	//const char* json1 = "{\"msgName\":\"time\",\"type\":3,\"message\":\"22:40:49 GMT+0000 (UTC)\"}"; // for testing only																	 //USE_SERIAL.printf("0 json2: %s\n", text.c_str());
+
+	JsonObject& root = jsonBuffer.parseObject(json2);
+	if (root.success())
+	{
+		//Serial.println(json1);
+		const char*  msgName = root["msgName"]; // "time"
+		int wstype = root["type"]; // 3
+		const char* message = root["message"]; // "22:40:49 GMT+0000 (UTC)"
+		USE_SERIAL.printf("a [WSc] name : %s\n", msgName);
+		Serial.println(wstype);
+		USE_SERIAL.printf("c [WSc] message: %s\n", message);
+		Serial.print("3 root[type]: ");
+		Serial.println(wstype);
+	}
+
+	//JsonObject& root = jsonBuffer.parseObject(json1);// *
+	Serial.print(" Parse success ? "); // parse success?
+	Serial.println(root.success()); // parse success?
+	USE_SERIAL.printf("[WSc] get text: %s\n", response);
+
+
+	//const char*  wsmsgName = root["msgName"]; // "msgVideo"
+	//int wstype = root["type"]; // 3
+	//const char* wsmessage = root["message"];
+
+	//String text = String((char *)&payload[0]);
+	// do Json parse
+}
+
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
 
 	switch (type) {
@@ -158,67 +205,59 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 void  wsVideoEvent(WStype_t type, uint8_t * payload, size_t length) {
 	// this to receive a message from the Heroku Server 
 	//const char* myjson = 
+	// see https://bblanchon.github.io/ArduinoJson/faq/whats-the-best-way-to-use-the-library/
+	// created with 
+	// see also example at https://uu.diva-portal.org/smash/get/diva2:1104261/FULLTEXT01.pdf
+
 	
-	DynamicJsonBuffer jsonBuffer(SENSORDATA_JSON_SIZE);
-	const char* json = (char *)&payload[0];
-	JsonObject& root = jsonBuffer.parseObject(json);
-
-	const char* wsmsgName = root["msgName"]; // "msgVideo"
-	int wstype = root["type"]; // 3
-	JsonArray& wsmessage = root["message"];
-
-	USE_SERIAL.printf("1 [WSc] get text: %s\n", root["message"]);
-
-	String text = String((char *)&payload[0]);
-	// do Json parse
 	
 	// 
-	Serial.print("2 Received from Heroku (type): ");
-	Serial.println( type );
-	Serial.print("3 root[type]: ");
-	Serial.println(int( root["type"]) );
 
 	switch (type) {
-	case WStype_TEXT:
+	case WStype_DISCONNECTED:
+		USE_SERIAL.printf("[WSc] Disconnected!\n");
+		isConnectedH = false;
+		break;
+	case WStype_CONNECTED:
+	
+		USE_SERIAL.printf("[WSc] Connected to url: %s\n", payload);
+		isConnectedH = true;
 
-		USE_SERIAL.printf("3 [%u] Received from Heroku (video): %s\n", &payload, &payload);
+		// send message to server when Connected
+		// socket.io upgrade confirmation message (required)
+		herokuWs.sendTXT("5");
+	
+	break;
+
+	case WStype_TEXT:
+		//parse JSON objet
+		processResponse((char*)payload);
+
+		USE_SERIAL.printf("4  Received from Heroku (video): %s\n", &payload[0]);
 		String text = String((char *)&payload[0]);
-		USE_SERIAL.printf("4 [%u] Received from Heroku (video): %s\n", length, text.c_str());
+		USE_SERIAL.printf("5 [%u] Received from Heroku (video): %s\n", length, text.c_str());
 		// if current efect is video continue else jump
 
 		if (text.startsWith("Y")) {      // video message
 			String xVal = (text.substring(text.indexOf("Y") + 1, text.length()));
 
 		}
-		//parse JSON objet
 
 		// transfer objet to ledMatrix
 
 		//end
-
-		// send message to client
-		// webSocket.sendTXT(num, "message here");
-
-		// send data to all connected clients
-		// webSocket.broadcastTXT("message here");
 		break;
 	}
 }
 
-void  wsTimeEvent(const char * payload, size_t lenght) {
-	yield();
-	char text = payload[0];
-	USE_SERIAL.printf("[%u] Received from Heroku (Time): %s\n", text);
+void herokuHeartBeat() {
+	if (isConnectedH) {
+		uint64_t now = millis();
+		if ((now - heartbeatTimestamp) > HEARTBEAT_INTERVAL) {
+			heartbeatTimestamp = now;
+			// socket.io heartbeat message
+			herokuWs.sendTXT(ESP_HeartBeat);
+		}
+	}
 }
 
-void  wsConnectEvent(const char * payload, size_t lenght) {
-
-	yield();
-	char text = payload[0];
-	USE_SERIAL.printf("[%u] Received from Heroku (connect): %s\n", text);
-}
-
-void wsDisconnectedEvent(const char * payload, size_t lenght) {
-	char text = payload[0];
-	USE_SERIAL.printf("[%u] disconnected from Heroku (disconnected): %s\n", text);
-}
