@@ -127,8 +127,9 @@ WebSocketsClient herokuWs;
 uint64_t heartbeatTimestamp = 0;
 bool isConnectedH = false; // connected to Heroku?
 #define  ESP_HeartBeat "2"
-String herokuHost = "app-gnk-p5js.herokuapp.com"; // for websocketclient
-
+String herokuHost = "app-gnk-p5js.herokuapp.com"; // for websocketclien
+int herokuport = 80;
+const char*  msgName = ""; //Heroku message name
 
 // define your LED hardware setup here
 #define DATA_PIN    4// D2sale x gpio 04
@@ -686,7 +687,7 @@ void setup() {
 
 	//herokuWs.beginSocketIO("app-gnk-p5js.herokuapp.com", 80); // for socket.io  client library
 	//herokuWs.beginSocketIO(herokuHost, 80);
-	herokuWs.begin(herokuHost, 80);
+	herokuWs.begin(herokuHost, herokuport);
    //webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
 	herokuWs.onEvent(wsVideoEvent);
 

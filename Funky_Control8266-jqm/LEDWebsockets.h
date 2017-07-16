@@ -3,51 +3,55 @@ the code here http://www.whatimade.today/esp8266-on-websockets-mdns-ota-and-leds
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
-void processResponse(char* response) {
+void processResponse(const char* response , size_t length) {
 	//DynamicJsonBuffer jsonBuffer(SENSORDATA_JSON_SIZE);
-	DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(3) + 100);
+	const size_t bufferSize = 64 * JSON_ARRAY_SIZE(3) + JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(3) + 720; 64 * JSON_ARRAY_SIZE(3) + JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(3) + 1000; ; // JSON_OBJECT_SIZE(3) + 50;
+	DynamicJsonBuffer jsonBuffer(bufferSize);
+	
 	// Format of date message 42["time","{\"msgName\":\"time\",\"type\":3,\"message\":\"18:15:13 GMT+0000 (UTC)\"}"]
 
 	//String json = String ((char *)payload[0]);
-	String text = ((char *)&response[0]);
+	String text = String ((char *)response);
 
 	//int pos = text.indexOf('{');      // position of { json object start
 	//String json2 = text.substring(pos, text.length() - 2) ;     //* get from "´{" to the jason obj  end
-	
 	//json2 = json2.c_str(); // con IO
-	String json2 = text;
-	Serial.println("json2 :");
-	Serial.println(json2);
-	
+	String json2 =  (text );
+
+	//Serial.print("json2 & heap:");
+	//Serial.println(json2);
+	//Serial.print(ESP.getFreeHeap(),DEC);
 
 	//const char* json1 = "{\"msgName\":\"time\",\"type\":3,\"message\":\"22:40:49 GMT+0000 (UTC)\"}"; // for testing only																	 //USE_SERIAL.printf("0 json2: %s\n", text.c_str());
 
-	JsonObject& root = jsonBuffer.parseObject(json2);
+	//JsonArray& root = jsonBuffer.parseArray(response); // anstes json2
+	JsonObject& root = jsonBuffer.parseObject(response); // anstes json2
 	if (root.success())
 	{
 		//Serial.println(json1);
-		const char*  msgName = root["msgName"]; // "time"
+		msgName = root["msgName"]; // "Heroku message Name"
 		int wstype = root["type"]; // 3
 		const char* message = root["message"]; // "22:40:49 GMT+0000 (UTC)"
 		USE_SERIAL.printf("a [WSc] name : %s\n", msgName);
-		Serial.println(wstype);
+		//Serial.println(wstype);
 		USE_SERIAL.printf("c [WSc] message: %s\n", message);
-		Serial.print("3 root[type]: ");
-		Serial.println(wstype);
+		//Serial.print("3 root[type]: ");
+		//Serial.println(wstype);
 	}
-
 	//JsonObject& root = jsonBuffer.parseObject(json1);// *
 	Serial.print(" Parse success ? "); // parse success?
 	Serial.println(root.success()); // parse success?
-	USE_SERIAL.printf("[WSc] get text: %s\n", response);
+	//USE_SERIAL.printf("[WSc] get text: %s\n", response);
+}
 
-
-	//const char*  wsmsgName = root["msgName"]; // "msgVideo"
-	//int wstype = root["type"]; // 3
-	//const char* wsmessage = root["message"];
-
-	//String text = String((char *)&payload[0]);
-	// do Json parse
+void sendAck()
+{
+	//Serial.print("ack : \t");
+	String json = "{\"msgName\":\"recibido\"}";
+	//ESP8266WebServer.send(200, "text/json", json); // para webserver normal
+	herokuWs.sendTXT(json); // para WS
+	Serial.println(json);
+	//json = String(); // empty 
 }
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
@@ -210,42 +214,54 @@ void  wsVideoEvent(WStype_t type, uint8_t * payload, size_t length) {
 	// see also example at https://uu.diva-portal.org/smash/get/diva2:1104261/FULLTEXT01.pdf
 
 	
-	
-	// 
-
 	switch (type) {
 	case WStype_DISCONNECTED:
 		USE_SERIAL.printf("[WSc] Disconnected!\n");
 		isConnectedH = false;
 		break;
-	case WStype_CONNECTED:
-	
+	case WStype_CONNECTED:	
 		USE_SERIAL.printf("[WSc] Connected to url: %s\n", payload);
 		isConnectedH = true;
 
+		//IPAddress ip = webSocket.remoteIP(num);
+		//USE_SERIAL.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+		
 		// send message to server when Connected
 		// socket.io upgrade confirmation message (required)
-		herokuWs.sendTXT("5");
-	
+		herokuWs.sendTXT("5 ESP connected");	// 5
 	break;
-
 	case WStype_TEXT:
 		//parse JSON objet
-		processResponse((char*)payload);
+		processResponse((char*)payload , length );
 
-		USE_SERIAL.printf("4  Received from Heroku (video): %s\n", &payload[0]);
-		String text = String((char *)&payload[0]);
-		USE_SERIAL.printf("5 [%u] Received from Heroku (video): %s\n", length, text.c_str());
-		// if current efect is video continue else jump
-
-		if (text.startsWith("Y")) {      // video message
-			String xVal = (text.substring(text.indexOf("Y") + 1, text.length()));
-
+		if (msgName == "msgArray1")
+		{
+			// send "recibido" back to unlock new frame
+			sendAck();
+			USE_SERIAL.printf("[text] Connected Ack");
 		}
-
+		/*
+		String text2 = String((char *)&payload);
+		//USE_SERIAL.printf("4  Received from Heroku (video): %s\n", &payload[0]);
+		
+		USE_SERIAL.printf("5 [%u] Received from Heroku (video): %s\n", length, text2.c_str());
+		// if current efect is video continue else jump
+		if (text2.startsWith("Y")) {      // video message
+			String xVal = (text2.substring(text2.indexOf("Y") + 1, text2.length()));
+		}
+		*/
 		// transfer objet to ledMatrix
-
 		//end
+		break;
+
+	case WStype_BIN:
+		//USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
+		herokuWs.sendBIN(payload, length);
+		//hexdump(payload, length);
+		sendAck();
+		//USE_SERIAL.printf("[text] Connected Ack");
+		//Serial.println();
+		// send data to server		
 		break;
 	}
 }
