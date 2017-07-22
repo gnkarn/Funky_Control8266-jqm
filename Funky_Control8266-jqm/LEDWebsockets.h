@@ -262,7 +262,7 @@ void  wsVideoEvent(WStype_t type, uint8_t * payload, size_t length) {
 		//herokuWs.sendBIN(payload, length); //Do not enable for final production
 		//hexdump(payload, length);//
 		sendAck();
-		memcpy(&c_leds, payload, length * sizeof(uint8_t));
+		memcpy(c_leds[0], payload, length * sizeof(uint8_t));
 
 		//USE_SERIAL.printf("[text] Connected Ack");
 		//Serial.println();
