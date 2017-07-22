@@ -454,7 +454,7 @@ CircleBeat circleB2(10, 12, 32, 4, CHSV(120, 255, 255), 1, 1);
 
 
 #include "LEDanimations.h"
-#include "LEDWebsockets.h"
+
 
 
 // factores para mapear la matriz de 16x16 en la matriz fisica
@@ -522,13 +522,14 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ QuadMirror		,"QuadMirror",	0/* nada*/		,0	 /* nada1*/ },
 	{ circulo2		,"circulo2",	0/* nada*/		,0	 /* nada1*/ },
 	{ one_color_allHSV ,"one_color_allHSV",	41/* h*/		,180	 /* b*/ },
+	{ video				,"video"	,0 /* nada1*/		,0 /* nada2 */ }	,
 
 
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 
 };
 const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAndArguments[0]);
-
+#include "LEDWebsockets.h"
 
 
 
@@ -752,8 +753,15 @@ void loop()
   //  FastLED.delay(1000 / 120); // about sixty FPS
 
 	EVERY_N_SECONDS(101) { nextPattern(); } // change patterns periodically
-	herokuWs.loop(); // handles Heroku socket.io loop
-	herokuHeartBeat(); // send HB to Heroku WS server
+
+	if (WiFi.status() == WL_CONNECTED) {
+		herokuWs.loop(); // handles Heroku socket.io loop
+		herokuHeartBeat(); // send HB to Heroku WS server
+	}
+	else {
+		herokuWs.disconnect();
+	} 
+
 }
 
 void nextPattern()

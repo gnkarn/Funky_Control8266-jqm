@@ -31,7 +31,15 @@ int wrap(int step) {
   return step;
 }
 
-
+void video(byte nada1 , byte nada2) {
+	// matrix gests updated on the heroku websocket callback
+	// verify is connected to server 
+	if (!isConnectedH )
+	{
+		//herokuWs.begin(herokuHost, herokuport);
+	}
+	FastLED.show(); // display this frame
+}
 void one_color_allHSV(byte ahue, byte abright) {                // SET ALL LEDS TO ONE COLOR (HSV)
 	ahue = myHue;
 	abright = myBrightness;

@@ -1,6 +1,9 @@
 /* Based on the websocket example and
 the code here http://www.whatimade.today/esp8266-on-websockets-mdns-ota-and-leds/ */
 
+// also for debiging this line can be enabled on wesockets.h
+// #define DEBUG_WEBSOCKETS(...) os_printf( __VA_ARGS__ ) // !!! enabled only for debuging
+
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 void processResponse(const char* response , size_t length) {
@@ -256,9 +259,11 @@ void  wsVideoEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 	case WStype_BIN:
 		//USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
-		herokuWs.sendBIN(payload, length);
-		//hexdump(payload, length);
+		//herokuWs.sendBIN(payload, length); //Do not enable for final production
+		//hexdump(payload, length);//
 		sendAck();
+		memcpy(&c_leds, payload, length * sizeof(uint8_t));
+
 		//USE_SERIAL.printf("[text] Connected Ack");
 		//Serial.println();
 		// send data to server		
