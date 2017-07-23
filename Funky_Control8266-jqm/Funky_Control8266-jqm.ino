@@ -151,7 +151,7 @@ const bool    kMatrixSerpentineLayout = true;
 
 // set master brightness 0-255 here to adjust power consumption
 // and light intensity
-#define BRIGHTNESS  31
+#define BRIGHTNESS  250
 
 // enter your custom matrix size if it is NOT a 16*16 and
 // check in that case the setup part and
@@ -191,7 +191,7 @@ uint8_t h;// color para funciones
 // revisar redindancia y luego optimizar
 
 #define MILLI_AMPERE      1500    // IMPORTANT: set here the max milli-Amps of your power supply 5V 2A = 2000
-#define FRAMES_PER_SECOND  100    // here you can control the speed. 
+#define FRAMES_PER_SECOND  64    // here you can control the speed. 
 int ledMode = 4;                  // this is the starting palette
 const uint8_t kMatrixWidth = WIDTH;
 const uint8_t kMatrixHeight = HEIGHT;
@@ -588,7 +588,7 @@ void setup() {
 	FastLED.setBrightness(BRIGHTNESS);
 	set_max_power_in_volts_and_milliamps(5, MILLI_AMPERE);
 	LEDColorCorrection{ TypicalSMD5050 };
-	FastLED.setDither(1);
+	//FastLED.setDither(1);
 	// just for debugging:
 
 
