@@ -10,6 +10,8 @@ Heroku broadcast each frame to any connected client , The ESP responds to it by 
 TODO
 
 make corrections on video colors adjusting Gamma
+clean code , delete unused parts
+improve code comments .
 Adjust each effect and its parameters
 send the parameters correct range by effect , to the WEB app, so min and max makes sense for each effect
 change parameters name according to the effect on the Web app ( dynamic HTML)
