@@ -1,5 +1,6 @@
 # Funky_Control8266-jqm
 apa102  fastled esp8266 and jqm
+please see : https://github.com/gnkarn/Funky_Control8266-jqm/wiki
 It is a LED matrix  20 x 24 , using APA102 leds , 
 Effects : multiple effects can be selected from a Web App , hosted on the same ESP8266, form any web browser
 Also parameters and other status info is exchanged using Websockets Async
