@@ -8,6 +8,7 @@ A new video effect was added  : a web app hosted on a Heroku server running a No
 Heroku broadcast each frame to any connected client , The ESP responds to it by transfering the image to the LED matrix , and sending back an ack to Heroku , asking for other frame .
 
 TODO
+
 make corrections on video colors adjusting Gamma
 Adjust each effect and its parameters
 send the parameters correct range by effect , to the WEB app, so min and max makes sense for each effect
