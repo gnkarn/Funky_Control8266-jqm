@@ -171,8 +171,8 @@ uint8_t hue; // para cambiar color en efectos dentro del loop
 
 // all 2D effects will be calculated in this matrix size
 // do not touch
-const uint8_t WIDTH = 16;// 
-const uint8_t HEIGHT = 16;
+const uint8_t WIDTH = 16;// 16
+const uint8_t HEIGHT = 16;// 16
 
 // number of LEDs based on fixed calculation matrix size
 // do not touch
@@ -190,8 +190,8 @@ uint8_t h;// color para funciones
 // seteo de variables desde ledcontrol8266-matriz-jqm
 // revisar redindancia y luego optimizar
 
-#define MILLI_AMPERE      1500    // IMPORTANT: set here the max milli-Amps of your power supply 5V 2A = 2000
-#define FRAMES_PER_SECOND  64    // here you can control the speed. 
+#define MILLI_AMPERE      5000    // IMPORTANT: set here the max milli-Amps of your power supply 5V 2A = 2000
+#define FRAMES_PER_SECOND  32    // here you can control the speed. 
 int ledMode = 4;                  // this is the starting palette
 const uint8_t kMatrixWidth = WIDTH;
 const uint8_t kMatrixHeight = HEIGHT;
@@ -208,7 +208,7 @@ static uint16_t z;
 // use the z-axis for "time".  speed determines how fast time moves forward.  Try
 // 1 for a very slow moving effect, or 60 for something that ends up looking like
 // water.
-uint8_t speed = 20; // speed is set dynamically once we've started up
+uint8_t speed = 10; //20  speed is set dynamically once we've started up
 
 // Scale determines how far apart the pixels in our noise matrix are.  Try
 // changing these values around to see how it affects the motion of the display.  The
@@ -223,7 +223,7 @@ CRGBPalette16 currentPalette(CRGB::Black);
 CRGBPalette16 targetPalette(CRGB::Black);
 uint8_t       colorLoop = 1;
 
-//Some Variables
+// ***** Some Global  Variables ******
 byte myOnOff = 0;					// general on off leds status
 byte myEffect = 1;                  //what animation/effect should be displayed
 
@@ -449,13 +449,9 @@ Circulo cir1(10, 12, 255, 2, 6, CHSV(0, 255, 255), 0);
 //cxc,cyc,bpm,crad,ccolor, status, cdir 
 CircleBeat circleB1(10, 12, 20, 8, CHSV(200, 255, 255), 1, 0);
 CircleBeat circleB2(10, 12, 32, 4, CHSV(120, 255, 255), 1, 1);
-// ---------------------------------------------------------------
-
-
+// -------------------------------------------------------------
 
 #include "LEDanimations.h"
-
-
 
 // factores para mapear la matriz de 16x16 en la matriz fisica
 uint8_t Fy = kMatrixHeight / CUSTOM_HEIGHT;
@@ -463,8 +459,6 @@ uint8_t Fx = kMatrixWidth / CUSTOM_WIDTH;
 
 long Duracion;// para timer de funcion
 long Previous_millis = 0;
-
-
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
 // Each pattern is defined as a function that takes two uint8_t's; all of the pattern functions
@@ -484,7 +478,7 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ Dots2			,"Dots2",		125 /*scale*/	, 0 /*no se usa*/},
 	{ SlowMandala2,	"SlowMandala2",	127 /*dim*/		, 0 /*no se usa*/},
 	{ SlowMandala3,	"SlowMandala3",	127 /*dim*/		, 0 /*no se usa*/},
-	{ Mandala8		,"Mandala8",	110 /*dim*/		, 0 /*no se usa*/},
+	{ Mandala8		,"Mandala8",	86 /*dim*/		, 0 /*no se usa*/},
 	{ MSGEQtest		,"MSGEQtest",	120 /* scale*/	, 0 /*no se usa*/ },
 	{ MSGEQtest2	,"MSGEQtest2",	127 /*scale*/	, 200 /*color*/},
 	{ MSGEQtest3	,"MSGEQtest3",	120 /*scale*/	, 100 /*color*/ },
@@ -540,8 +534,6 @@ const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAnd
  */
 void setup() {
 
-
-
 	// Open serial connection, 115200 baud
 	pinMode(LED_BUILTIN, OUTPUT);// led pin as output
 	pinMode(MSGEQ7_STROBE_PIN, OUTPUT);// strobe pin as output
@@ -570,8 +562,6 @@ void setup() {
 	miJarray.add(2.302038, 6);   // if not specified, 2 digits are printed
 	// FIN ejemplo de JSON ------------------------------------------------
 
-
-
    // firstContact();  // Connect with Processing. Hello, is anyone out there? (eliminado pues no uso el port serie con processing)
 
 	// use the following line only when working with a 16*16
@@ -585,10 +575,11 @@ void setup() {
 
 	LEDS.addLeds<LED_TYPE, DATA_PIN, CLK_PIN, COLOR_ORDER>(c_leds[0], c_leds.Size()).setCorrection(TypicalSMD5050);
 
+	//FastLED.setDither(0); // disable temporal dithering
 	FastLED.setBrightness(BRIGHTNESS);
-	set_max_power_in_volts_and_milliamps(5, MILLI_AMPERE);
+	//set_max_power_in_volts_and_milliamps(5, MILLI_AMPERE);
 	LEDColorCorrection{ TypicalSMD5050 };
-	//FastLED.setDither(1);
+	FastLED.setDither(1);
 	// just for debugging:
 
 
@@ -611,14 +602,13 @@ void setup() {
 	mySaturation = EEPROM.read(2);
 	myValue = EEPROM.read(3);
 	myparameter1 = EEPROM.read(4);
-	myparameter1 += EEPROM.read(5) * 256;
+	//myparameter1 += EEPROM.read(5) * 256;
 
 
-	delay(100);                                         //Delay needed, otherwise showcolor doesn't light up all leds or they produce errors after turning on the power supply - you will need to experiment
+	delay(100);  //Delay needed, otherwise showcolor doesn't light up all leds or they produce errors after turning on the power supply - you will need to experiment
 	LEDS.showColor(CHSV(myHue, mySaturation, myValue));
-	// fin setup desde ledcontrol.8266 matriz-jqm
 
-	// Si quiero siempre activar el AP entonces habiloitar esta linea
+	// Si quiero siempre activar el AP entonces habilitar esta linea
 	//WiFi.disconnect(); // Borra ssid y password 
 
 	Serial.println();
@@ -639,7 +629,7 @@ void setup() {
 
 	Serial.print("Programa FunkyControl JQM-Async  Iniciado  ");// debug
 
-	FastLED.setBrightness(127);
+	FastLED.setBrightness(BRIGHTNESS);
 	FastLED.clear(true);
 	delay(200);
 	FastLED.showColor(CRGB::Red);
@@ -710,7 +700,7 @@ void loop()
 	}
 	h = hue;
 	settingsServerTask();
-	webSocket.loop();// handles websockets
+	//webSocket.loop();// handles websockets
 	EVERY_N_SECONDS(5) {
 		sendHeartBeat(); // envia el json de HB} al cliente WEB
 	}
@@ -755,7 +745,7 @@ void loop()
 	EVERY_N_SECONDS(101) { nextPattern(); } // change patterns periodically
 
 	if (WiFi.status() == WL_CONNECTED) {
-		herokuWs.loop(); // handles Heroku socket.io loop
+		//herokuWs.loop(); // handles Heroku socket.io loop
 		herokuHeartBeat(); // send HB to Heroku WS server
 	}
 	else {

@@ -43,7 +43,7 @@ void video(byte nada1 , byte nada2) {
 void one_color_allHSV(byte ahue, byte abright) {                // SET ALL LEDS TO ONE COLOR (HSV)
 	ahue = myHue;
 	abright = myBrightness;
-	fill_solid(c_leds[0], CUSTOM_NUM_LEDS /*number of leds*/, CHSV(ahue, mySaturation, abright));
+	fill_solid(c_leds[0], CUSTOM_NUM_LEDS /*number of leds*/, CHSV(myHue, mySaturation, myValue));
   
 	FastLED.show();
 }
@@ -518,7 +518,7 @@ void SlowMandala2(byte dim, byte nada) {
 		for (int j = 0; j < 16; j++) {
 			MoveOscillators();
 			Pixel(j, i, (osci[0] + osci[1]) / 2);
-			SpiralStream(4, 4, 4, dim);
+			SpiralStream(4, 4, 4, dim); // antes dim
 			Caleidoscope2();
 			ShowFrame();
 			FastLED.delay(20);
@@ -532,7 +532,7 @@ void SlowMandala3(byte dim, byte nada) {
 		for (int j = 0; j < 16; j++) {
 			MoveOscillators();
 			Pixel(j, j, (osci[0] + osci[1]) / 2);
-			SpiralStream(4, 4, 4, dim);
+			SpiralStream(4, 4, 4, myparameter1);//antes dim
 			Caleidoscope2();
 			ShowFrame();
 			FastLED.delay(20);
@@ -547,7 +547,7 @@ void Mandala8(byte dim, byte nada) {
 	Pixel(p[2] / 2, p[3] / 2, osci[3]);
 	Caleidoscope5();
 	Caleidoscope2();
-	HorizontalStream(dim);
+	HorizontalStream(myparameter1); //antes dim
 	ShowFrame();
 }
 
