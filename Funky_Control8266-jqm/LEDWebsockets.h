@@ -89,16 +89,36 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 		String text = String((char *)&payload[0]);
 
-		if (text.startsWith("x")) {      // on off
-			String xVal = (text.substring(text.indexOf("x") + 1, text.length()));
-			if (myOnOff != xVal.toInt()) {
-				myOnOff = xVal.toInt();
-				//EEPROM.write(1, myOnOff);
-				lastChangeTime = millis();
-				eepromCommitted = false;
+		if (text.startsWith("x")) {      // on off(x1) or auto switch (x2)
+			uint8_t xswitch = (text.substring(text.indexOf("x") + 1, text.length()-1)).toInt(); // if X1 , then xval = "1"
+			uint8_t  xVal = (text.substring(text.indexOf("x") + 2, text.length())).toInt(); // value 0 or 1 
+			//Serial.println(text); // debug
+			//Serial.println(xswitch);
+			//Serial.println(xVal);
+
+			switch (xswitch)
+			{
+			case 1:
+				if (myOnOff != xVal) {
+					myOnOff = xVal;
+					//EEPROM.write(1, myOnOff);
+					lastChangeTime = millis();
+					eepromCommitted = false;
+				}
+				break;
+			case 2:
+				if (myMode != xVal) {
+					myMode = xVal;
+					//EEPROM.write(1, myMode);
+					lastChangeTime = millis();
+					eepromCommitted = false;
+				}
+				break;
+			default:
+				myMode = 1;
+				myOnOff = 0;
 			}
 		}
-
 		if (text.startsWith("a")) {      // efectos
 			String xVal = (text.substring(text.indexOf("a") + 1, text.length()));
 			flickerLed = random(0, NUM_LEDS - 1);

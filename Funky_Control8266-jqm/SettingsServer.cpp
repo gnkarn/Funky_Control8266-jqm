@@ -7,6 +7,7 @@
 #include <ESP8266HTTPUpdateServer.h>
 #include <FS.h>
 #include <ESP8266SSDP.h>
+#include <FastLED.h>
 
 #define DBG_OUTPUT_PORT Serial
 
@@ -114,7 +115,7 @@ void handle_wifisetup(void){
     ESP.reset();
 }
 
-void handle_brightness(void)
+void handle_brightness(void) // NOT USED 
 {
     String aStr = server.arg("brightness");
     int brightness = aStr.toInt();
@@ -149,6 +150,7 @@ void startSettingsServer(void){
   ArduinoOTA.setHostname(pvhostname);
   ArduinoOTA.setPassword((const char *)"");
   ArduinoOTA.onError([](ota_error_t error) { ESP.restart(); });
+ 
   ArduinoOTA.begin();
   
   server.on("/refresh", handle_refresh);
@@ -172,12 +174,11 @@ void startSettingsServer(void){
   server.begin();
   Serial.println("HTTP server started");
   //ArduinoOTA handles mdns service
- if(!mdns.begin(pvhostname, WiFi.localIP())) {
-   Serial.println("Error setting up MDNS responder!");
+ if(mdns.begin("GNK_ESP1_AP", WiFi.localIP())) {
+   Serial.println(" MDNS responder  STARTED!");
   }
-  Serial.println("mDNS responder started");
-
-   mdns.addService("http", "tcp", 80);
+  
+   MDNS.addService("http", "tcp", 80);
 
 } 
 

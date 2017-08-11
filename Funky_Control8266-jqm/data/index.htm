@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <!-- Copied and adapted from Amir Avni's repository https://github.com/amiravni/ESP8266_12VLEDS_Websocket_OTA
-and his description http://www.whatimade.today/esp8266-on-websockets-mdns-ota-and-leds/ 
+and his description http://www.whatimade.today/esp8266-on-websockets-mdns-ota-and-leds/
 
 mejorado por GNK  2016  -->
-
 <head>
     <title>LED Control using JQM</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -23,143 +22,154 @@ mejorado por GNK  2016  -->
     <script type="text/javascript" src="js/jquery.wheelcolorpicker.js"></script>
     <script src="js/myjs.js"></script>
 </head>
-
 <body>
     <script>
-    $(document).bind('mobileinit', function() {
-        $.mobile.changePage.defaults.changeHash = false;
-        $.mobile.hashListeningEnabled = false;
-        $.mobile.pushStateEnabled = false;
-    });
+        $(document).bind('mobileinit', function () {
+            $.mobile.changePage.defaults.changeHash = false;
+            $.mobile.hashListeningEnabled = false;
+            $.mobile.pushStateEnabled = false;
+        });
     </script>
     <div data-role="page" data-theme="a" id="page1">
         <div data-role="header">
             <h1>LED Control JQM1</h1>
             <a id="Hbeat" data-icon="heart" class="ui-btn-right">Hbeat</a>
         </div>
-        <div data-role="content" data-theme="b">
-            <div class="ui-field-contain">
-                <label for="text1">WebSocket IP</label>
-                <input type="text" id="webSocketCell" value="ws://192.168.0.18:81/" onblur='WSConnect()' />
+        <div class="ui-mini ">
 
-                <select data-role="slider" name ="sliderx" id="on-off" onchange="slider_react(this.value ,this.name)" data-highlight="true"  >
-                    <option value="0">off</option>
-                    <option value="1">on</option>
-                </select>
-
+            <div data-role="content" data-theme="b">
+                <div class="ui-field-contain">
+                    <label for="text1">WebSocket IP</label>
+                    <input type="text" id="webSocketCell" value="ws://192.168.0.18:81/" onblur='WSConnect()' />
+                </div>
+                <fieldset class="ui-mini ui-grid-a">
+                    <div class="ui-block-a" style="padding: 5px">
+                        <label for="on-off">On-Off </label>
+                        <select data-role="slider" name="sliderx1" id="on-off" onchange="slider_react(this.value ,this.name)" data-highlight="true">
+                            <option value="0">off</option>
+                            <option value="1">on</option>
+                        </select>
+                    </div>
+                    <div class="ui-block-b" style="padding: 5px">
+                        <label for="automatico">Auto Run </label>
+                        <select data-role="slider" name="sliderx2" id="automatico" onchange="slider_react(this.value ,this.name)" data-highlight="true">
+                            <option value="0">man</option>
+                            <option value="1">auto</option>
+                        </select>
+                    </div>
+                    
+                </fieldset>
                 <div class="ui-field-contain">
                     <label for="slider0-range">Brightness</label>
                     <input type="range" value="92" min="0" max="255" step="1" name="Slidery" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="sliderbr" />
                 </div>
 
-            </div>
-            <div class="ui-mini ui-grid-d my-breakpoint">
-                <!--botones 
-                
-                -->
-                <!-- menu desplegable  el primero lo actualiza JS automaticamente-->
-                <div class="ui-field-contain" data-theme="c">
-                    <fieldset data-role="controlgroup">
-                        <legend>EFECTOS:</legend>
-                        <label for="menu-efectos">Efecto1</label>
-                        <select name="menu-efectos" id="menu-efectos" data-native-menu="true" data-icon="info">
-                            <option value="1">Dots1</option>
-                            <option value="2" selected="selected">Dots2</option>
-                            <option value="3">SlowMandala2</option>
-                            <option value="4">SlowMandala3</option>
-                            <option value="5">Mandala8</option>
-                            <option value="6">MSGEQtest</option>
-                            <option value="7">MSGEQtest2</option>
-                            <!-- etc. -->
-                        </select>
-                        <label for="menu-efectos2">Efectos Audio </label>
-                        <select name="menu-efectos2" id="menu-efectos2">
-                            <option value="8">MSGEQtest3</option>
-                            <option value="9" selected="selected">MSGEQtest3</option>
-                            <option value="10">AudioSpiral</option>
-                            <option value="11">MSGEQtest5</option>
-                            <option value="12">MSGEQtest6</option>
-                            <option value="13">MSGEQtest7</option>
-                            <option value="14">MSGEQtest8</option>
-                            <option value="15">MSGEQtest9</option>
-                            <option value="16">CopyTest</option>
-                            <option value="17">CopyTest2</option>
-                            <option value="18">Audio1</option>
-                            <option value="19">Audio2</option>
-                            <option value="20">Audio3</option>
-                            <option value="21">Audio4</option>
-                            <option value="22">CaleidoTest2</option>
-                            <option value="23">CaleidoTest1</option>
-                            <option value="24">Audio5</option>
-                            <option value="25">Audio6</option>
-                            <option value="26">NoiseExample1</option>
-                            <option value="27">NoiseExample2</option>
-                            <option value="28">NoiseExample3</option>
-                            <option value="29">NoiseExample4</option>
-                            <option value="30">NoiseExample5</option>
-                            <option value="31">NoiseExample6</option>
-                            <option value="32">NoiseExample7</option>
-                            <!-- etc. -->
-                        </select>
-                    </fieldset>
-                </div>
-                <!-- slider1 -->
-                <form>
-                    <div class="ui-field-contain">
-                        <label for="slider1">Color (Hue)</label>
-                        <input type="range" min="0" max="255" name="sliderb" data-id="slider1" data-popup-enabled="true" data-highlight="true" onchange="slider_react(this.value ,this.name)" />
-                    </div>
-                </form>
-            </div>
-            <!--slider 2,3,4 -->
-            <div class="ui-field-contain">
-                <label for="slider2-range">Saturation</label>
-                <input type="range"  value="92" min="0" max="255" step="1" name="Sliderc" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider2" />
-            </div>
-            <div class="ui-field-contain">
-                <label for="slider3-range">Value</label>
-                <input type="range"  value="168" min="0" max="255" step="1" name="sliderd" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider3" />
-            </div>
-            <div class="ui-field-contain">
-                <label for="slider4-range">Parametro1</label>
-                <input type="range"  value="168" min="0" max="255" step="1" name="slidere" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider4" />
-            </div>
-        </div>
-        <!-- color picker -->
-        <div class="ui-mini ui-grid-d ui-responsive">
-            <div class="ui-block-a" style="padding: 5px">
-                Pick a color:
-                <!--<input type="text" data-wheelcolorpicker="" id="color-input">-->
-                <input type="text" data-wheelcolorpicker="" id="color-input" data-wcp-sliders="whsvp" name="sliderw">
-            </div>
-            <div class="ui-block-b" style="padding: 5px">
-                Slider events
-                <input type="text" readonly="" id="event-slider">
-            </div>
-            <div class="ui-block-c" style="padding: 5px">
-                Input events
-                <input type="text" readonly="" id="event-input">
-            </div>
-            <div class="ui-block-d" style="padding: 5px">
-                RGB
-                <input type="text" readonly="" id="event-color">
-            </div>
-            <div class="ui-block-e" style="padding: 5px">
-                hsv
-                <input type="text" readonly="" id="event-color2">
-            </div>
-            <div class="ui-field-contain">
-                <label for="text1">ESP Restart Reason:</label>
-                <input type="text" id="msgESP" value="" />
-            </div>
-        </div>
-        <div data-role="footer">
-            <h1 id="status"> Status : </h1>
-            <a id="_tiempo" data-icon="clock" class="ui-btn-right"> Tiempo: </a>
-            <a id="_efecto" data-icon="star" class="ui-btn-left">Efecto : </a>
-            <h1>by GNK - 2017</h1>
-        </div>
-        <script src="js/myjs-body.js"></script>
-</body>
+                <div class="ui-mini ui-grid-d my-breakpoint">
+                    <!--botones
 
+                    -->
+                    <!-- menu desplegable  el primero lo actualiza JS automaticamente-->
+                    <div class="ui-field-contain" data-theme="c">
+                        <fieldset data-role="controlgroup">
+                            <legend>EFECTOS:</legend>
+                            <label for="menu-efectos">Efecto1</label>
+                            <select name="menu-efectos" id="menu-efectos" data-native-menu="true" data-icon="info">
+                                <option value="1">Dots1</option>
+                                <option value="2" selected="selected">Dots2</option>
+                                <option value="3">SlowMandala2</option>
+                                <option value="4">SlowMandala3</option>
+                                <option value="5">Mandala8</option>
+                                <option value="6">MSGEQtest</option>
+                                <option value="7">MSGEQtest2</option>
+                                <!-- etc. -->
+                            </select>
+                            <label for="menu-efectos2">Efectos Audio </label>
+                            <select name="menu-efectos2" id="menu-efectos2">
+                                <option value="8">MSGEQtest3</option>
+                                <option value="9" selected="selected">MSGEQtest3</option>
+                                <option value="10">AudioSpiral</option>
+                                <option value="11">MSGEQtest5</option>
+                                <option value="12">MSGEQtest6</option>
+                                <option value="13">MSGEQtest7</option>
+                                <option value="14">MSGEQtest8</option>
+                                <option value="15">MSGEQtest9</option>
+                                <option value="16">CopyTest</option>
+                                <option value="17">CopyTest2</option>
+                                <option value="18">Audio1</option>
+                                <option value="19">Audio2</option>
+                                <option value="20">Audio3</option>
+                                <option value="21">Audio4</option>
+                                <option value="22">CaleidoTest2</option>
+                                <option value="23">CaleidoTest1</option>
+                                <option value="24">Audio5</option>
+                                <option value="25">Audio6</option>
+                                <option value="26">NoiseExample1</option>
+                                <option value="27">NoiseExample2</option>
+                                <option value="28">NoiseExample3</option>
+                                <option value="29">NoiseExample4</option>
+                                <option value="30">NoiseExample5</option>
+                                <option value="31">NoiseExample6</option>
+                                <option value="32">NoiseExample7</option>
+                                <!-- etc. -->
+                            </select>
+                        </fieldset>
+                    </div>
+                    <!-- slider1 -->
+                    <form>
+                        <div class="ui-field-contain">
+                            <label for="slider1">Color (Hue)</label>
+                            <input type="range" min="0" max="255" name="sliderb" data-id="slider1" data-popup-enabled="true" data-highlight="true" onchange="slider_react(this.value ,this.name)" />
+                        </div>
+                    </form>
+                </div>
+                <!--slider 2,3,4 -->
+                <div class="ui-field-contain">
+                    <label for="slider2-range">Saturation</label>
+                    <input type="range" value="92" min="0" max="255" step="1" name="Sliderc" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider2" />
+                </div>
+                <div class="ui-field-contain">
+                    <label for="slider3-range">Value</label>
+                    <input type="range" value="168" min="0" max="255" step="1" name="sliderd" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider3" />
+                </div>
+                <div class="ui-field-contain">
+                    <label for="slider4-range">Parametro1</label>
+                    <input type="range" value="168" min="0" max="255" step="1" name="slidere" onchange="slider_react(this.value ,this.name)" data-highlight="true" id="slider4" />
+                </div>
+            </div>
+            <!-- color picker -->
+            <div class="ui-mini ui-grid-d ui-responsive">
+                <div class="ui-block-a" style="padding: 5px">
+                    Pick a color:
+                    <!--<input type="text" data-wheelcolorpicker="" id="color-input">-->
+                    <input type="text" data-wheelcolorpicker="" id="color-input" data-wcp-sliders="whsvp" name="sliderw">
+                </div>
+                <div class="ui-block-b" style="padding: 5px">
+                    Slider events
+                    <input type="text" readonly="" id="event-slider">
+                </div>
+                <div class="ui-block-c" style="padding: 5px">
+                    Input events
+                    <input type="text" readonly="" id="event-input">
+                </div>
+                <div class="ui-block-d" style="padding: 5px">
+                    RGB
+                    <input type="text" readonly="" id="event-color">
+                </div>
+                <div class="ui-block-e" style="padding: 5px">
+                    hsv
+                    <input type="text" readonly="" id="event-color2">
+                </div>
+                <div class="ui-field-contain">
+                    <label for="text1">ESP Restart Reason:</label>
+                    <input type="text" id="msgESP" value="" />
+                </div>
+            </div>
+            <div data-role="footer">
+                <h1 id="status"> Status : </h1>
+                <a id="_tiempo" data-icon="clock" class="ui-btn-right"> Tiempo: </a>
+                <a id="_efecto" data-icon="star" class="ui-btn-left">Efecto : </a>
+                <h1>by GNK - 2017</h1>
+            </div>
+            <script src="js/myjs-body.js"></script>
+</body>
 </html>

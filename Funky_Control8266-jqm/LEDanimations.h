@@ -484,9 +484,6 @@ void LedsNoise (byte nada,byte nada1)
 
 // animaciones pasadas desde funciones
 
-void OnOff(uint8_t nada1, uint8_t nada2) {
-	FastLED.clear(myOnOff);
-}
 
 // 2 oscillators flying arround one ;)
 void Dots1(uint8_t color1, uint8_t color2) {
@@ -1060,5 +1057,18 @@ void circulo2(byte nada, byte nada1) {
 	FastLED.show();
 	//blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
 }
+
+void nextPattern()
+{
+	// add one to the current pattern number, and wrap around at the end
+	//const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAndArguments[0]);
+	gCurrentPatternNumber = (gCurrentPatternNumber + 1) % numberOfPatterns;
+	Serial.print("funcion : \t");
+	Serial.println(gCurrentPatternNumber);
+	sendAll(); // lo pongo aqui , pero en realidad deberia ser solo cuando hay un cambio de efecto
+
+}
+
+
 
 

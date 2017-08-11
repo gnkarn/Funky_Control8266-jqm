@@ -19,7 +19,6 @@ TODO:
  2d example with more than 2 sines
  speed up MSGEQ7 readings
 
-
  DONE:
  25.6.      creating basic structure
  setting up basic examples
@@ -35,7 +34,6 @@ TODO:
  30.6.      RenderCustomMatrix
  added more comments
  alpha version released
-
 
 /*
 
@@ -56,7 +54,7 @@ TODO:
  anything else with less than 4kB RAM)
  */
 
- // modificado por GNK para matriz de 20x24 
+ // modificado por GNK para matriz de 20x24
  // la fncion de conversion interpola 2 valores de x para generar un x nuevo, pues son mas leds fisicos en x
  // y promedia dos valores de Y para calcular un Y en la matriz de salida , pues son menos
  // sin terminar incopora lectura de port serie para cambiar parametros, ver listas de lectura
@@ -72,9 +70,6 @@ TODO:
 //esta version incorpora el modo ASYNC de webserver y de websockets
 // https://github.com/me-no-dev/ESPAsyncWebServer#libraries-and-projects-that-use-asyncwebserver
 //wifi manager async  https://github.com/btomer/WiFiManager
-
-
-
 
 #include <ArduinoOTA.h>
 // NOTE: This requires btomer's fork of the WiFiManager library (https://github.com/btomer/WiFiManager)
@@ -98,15 +93,13 @@ TODO:
 
 #include <FastLED_GFX.h>
 // para integrar MAtrix example-APA102
-#include <LEDMatrix.h>  
+#include <LEDMatrix.h>
 // ver https://github.com/AaronLiddiment/LEDMatrix/wiki
 #include <coordinates.h> // ahora incluido como una libreria
 
 // json setup ofr the Video matrix json object
 //sized using  https://bblanchon.github.io/ArduinoJson/assistant/index.html
 #define SENSORDATA_JSON_SIZE (JSON_ARRAY_SIZE(480) + 2 * JSON_OBJECT_SIZE(0) + 479 * JSON_OBJECT_SIZE(3) + 8740)
-
-
 
 int  ledState = LOW;
 
@@ -145,7 +138,6 @@ boolean testing = false;  // Default is false. [Ok to change for testing.]
 boolean linkedUp = false;  // Initially set linkup status false. [Do Not change.]
 /****End of variables needed for sending Processing. */
 
-
 // Param for different pixel layouts
 const bool    kMatrixSerpentineLayout = true;
 
@@ -167,7 +159,6 @@ uint8_t hue; // para cambiar color en efectos dentro del loop
 #define MSGEQ7_RESET_PIN  12// antes 1
 #define AUDIO_LEFT_PIN    0
 #define AUDIO_RIGHT_PIN   0
-
 
 // all 2D effects will be calculated in this matrix size
 // do not touch
@@ -191,7 +182,7 @@ uint8_t h;// color para funciones
 // revisar redindancia y luego optimizar
 
 #define MILLI_AMPERE      5000    // IMPORTANT: set here the max milli-Amps of your power supply 5V 2A = 2000
-#define FRAMES_PER_SECOND  32    // here you can control the speed. 
+#define FRAMES_PER_SECOND  32    // here you can control the speed.
 int ledMode = 4;                  // this is the starting palette
 const uint8_t kMatrixWidth = WIDTH;
 const uint8_t kMatrixHeight = HEIGHT;
@@ -202,7 +193,6 @@ const uint8_t kMatrixHeight = HEIGHT;
 static uint16_t x;
 static uint16_t y;
 static uint16_t z;
-
 
 // We're using the x/y dimensions to map to the x/y pixels on the matrix.  We'll
 // use the z-axis for "time".  speed determines how fast time moves forward.  Try
@@ -224,8 +214,9 @@ CRGBPalette16 targetPalette(CRGB::Black);
 uint8_t       colorLoop = 1;
 
 // ***** Some Global  Variables ******
-byte myOnOff = 0;					// general on off leds status
+uint8_t myOnOff = 1;					// general on off leds status
 byte myEffect = 1;                  //what animation/effect should be displayed
+uint8_t myMode = 1;					// auto Run mode =1 , manual =0
 
 byte myHue = 33;                    //I am using HSV, the initial settings display something like "warm white" color at the first start
 byte mySaturation = 168;
@@ -247,11 +238,7 @@ unsigned long previousTime = 0;
 unsigned long lastChangeTime = 0;
 unsigned long currentChangeTime = 0;
 
-
-
 // fin seteo de variables del ledcontrol-8266 m,atriz-jqm
-
-
 
 // the rendering buffer (16*16)
 // do not touch
@@ -276,20 +263,14 @@ byte p[4];
 int left[7];
 int right[7];
 
-
-
 // noise stuff
 //uint16_t speed = 10;
 //uint16_t scale = 50;
 uint16_t scale2 = 30;
 
-
-
 // #define MAX_DIMENSION ((kMatrixWidth>kMatrixHeight) ? kMatrixWidth : kMatrixHeight)
 //uint8_t noise[MAX_DIMENSION][MAX_DIMENSION];
 uint8_t noise2[MAX_DIMENSION][MAX_DIMENSION];
-
-
 
 static uint16_t x2;
 static uint16_t y2;
@@ -317,7 +298,7 @@ private:
 
 public:
 	// cxc,cyc,crpm,crev,crad,ccolor,cdir : center coords, rpm, num of revs, radious , color ,dir
-	// Constructor - creates a Circulo  
+	// Constructor - creates a Circulo
 	// and initializes the member variables and state
 
 	Circulo(uint8_t cxc, uint8_t cyc, uint16_t crpm, uint8_t crev, uint8_t crad, CHSV ccolor, bool cdir)
@@ -342,8 +323,6 @@ public:
 	void setyc(uint8_t cyc) { mcyc = cyc; };
 	void  setColor(CHSV ccolor) { mccolor = ccolor; };
 
-
-
 	//void Start() {};
 	//void Stop() {};
 	void ChgDir() {
@@ -361,7 +340,7 @@ public:
 
 			cpoint.fromPolar(mcrad, mcphi, mcxc, mcyc); // x + ((p_start + p_length)*(1+cos(p_angle))/2);
 														//y1 = y + ((p_start + p_length)*(1+sin(p_angle))/2);
-			uint8_t x1 = cpoint.getX(); // coordenadas punto 
+			uint8_t x1 = cpoint.getX(); // coordenadas punto
 			uint8_t y1 = cpoint.getY();
 			c_leds(x1, y1) = mccolor;
 			//Serial.println(  x1, y1);
@@ -369,12 +348,10 @@ public:
 			mpreviousMillis = currentMillis;  // Remember the time
 			mcphi = mcphi + 1 * (mcdir)-1 * (!mcdir); // incrementa en la direccion indicada
 			FastLED.show();
-
 		}
 	}
-
 };
-class CircleBeat { //cxc,cyc,bpm,crad,ccolor, status, cdir 
+class CircleBeat { //cxc,cyc,bpm,crad,ccolor, status, cdir
 				   // Class Member Variables
 				   // These are initialized at startup
 private:
@@ -385,10 +362,9 @@ private:
 	bool  mcstatus;// 0 detenido , 1 activo
 	CHSV mccolor;
 
-
 public:
 	// cxc,cyc,crpm,crev,crad,ccolor,cdir : center coords, rpm, num of revs, radious , color ,dir
-	// Constructor - creates a Circulo  
+	// Constructor - creates a Circulo
 	// and initializes the member variables and state
 
 	CircleBeat(uint8_t cxc, uint8_t cyc, uint16_t cbpm, uint8_t crad, CHSV ccolor, bool cbstatus, bool cdir)
@@ -401,7 +377,6 @@ public:
 		mcdir = cdir;// 0 horario 1 anti
 		mpreviousMillis = 0;  	// will store last time LED was updated
 		mcstatus = cbstatus = 0;
-
 	}
 
 	uint8_t getrad() { return mcrad; };
@@ -413,7 +388,6 @@ public:
 	void setyc(uint8_t cyc) { mcyc = cyc; };
 	void  setColor(CHSV ccolor) { mccolor = ccolor; };
 	void setdir(bool cdir) { mcdir = cdir; };
-
 
 	void Start() { mcstatus = 1; };
 	void ChangeStatus() { mcstatus = !mcstatus; };
@@ -436,21 +410,19 @@ public:
 			c_leds(i, j) = mccolor;
 
 			blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
-
 		}
 	}
-
 };
 
 // defino tres objetos para efectos
 // --------------------------------------------------------------
 // Circulo( cxc,  cyc,  crpm,  crev,  crad,  ccolor,  cdir)
 Circulo cir1(10, 12, 255, 2, 6, CHSV(0, 255, 255), 0);
-//cxc,cyc,bpm,crad,ccolor, status, cdir 
+//cxc,cyc,bpm,crad,ccolor, status, cdir
 CircleBeat circleB1(10, 12, 20, 8, CHSV(200, 255, 255), 1, 0);
 CircleBeat circleB2(10, 12, 32, 4, CHSV(120, 255, 255), 1, 1);
 // -------------------------------------------------------------
-
+uint8_t  numberOfPatterns = 1;
 #include "LEDanimations.h"
 
 // factores para mapear la matriz de 16x16 en la matriz fisica
@@ -462,7 +434,7 @@ long Previous_millis = 0;
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
 // Each pattern is defined as a function that takes two uint8_t's; all of the pattern functions
-// have to have the same signature in this setup, and two (hardcoded!) parameters can be 
+// have to have the same signature in this setup, and two (hardcoded!) parameters can be
 // passed to each one: ( mark kriesgman demo reel arg2)
 typedef void(*TwoArgumentPattern)(uint8_t arg1, uint8_t arg2);
 typedef struct {
@@ -473,7 +445,6 @@ typedef struct {
 } TwoArgumentPatterWithArgumentValues;
 
 TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
-	{ OnOff			,"OnOff",		0	/*nada */	, 0 /*nada */ },
 	{ Dots1			,"Dots1",		1	/*color1 */	, 1 /*color2 */ },
 	{ Dots2			,"Dots2",		125 /*scale*/	, 0 /*no se usa*/},
 	{ SlowMandala2,	"SlowMandala2",	127 /*dim*/		, 0 /*no se usa*/},
@@ -516,16 +487,12 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ QuadMirror		,"QuadMirror",	0/* nada*/		,0	 /* nada1*/ },
 	{ circulo2		,"circulo2",	0/* nada*/		,0	 /* nada1*/ },
 	{ one_color_allHSV ,"one_color_allHSV",	41/* h*/		,180	 /* b*/ },
-	{ video				,"video"	,0 /* nada1*/		,0 /* nada2 */ }	,
-
+	{ video				,"video"	,0 /* nada1*/		,0 /* nada2 */ }
 
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
-
 };
-const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAndArguments[0]);
+
 #include "LEDWebsockets.h"
-
-
 
 /*
 -------------------------------------------------------------------
@@ -533,6 +500,7 @@ const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAnd
  -------------------------------------------------------------------
  */
 void setup() {
+	numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAndArguments[0]);
 
 	// Open serial connection, 115200 baud
 	pinMode(LED_BUILTIN, OUTPUT);// led pin as output
@@ -565,7 +533,7 @@ void setup() {
    // firstContact();  // Connect with Processing. Hello, is anyone out there? (eliminado pues no uso el port serie con processing)
 
 	// use the following line only when working with a 16*16
-	// and delete everything in the function RenderCustomMatrix() 
+	// and delete everything in the function RenderCustomMatrix()
 	// at the end of the code; edit XY() to change your matrix layout
 	// right now it is doing a serpentine mapping
 	//FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds2, CUSTOM_NUM_LEDS);
@@ -581,7 +549,6 @@ void setup() {
 	LEDColorCorrection{ TypicalSMD5050 };
 	FastLED.setDither(1);
 	// just for debugging:
-
 
 	InitMSGEQ7();
 	// Initialize our noise coordinates to some random values
@@ -604,12 +571,11 @@ void setup() {
 	myparameter1 = EEPROM.read(4);
 	//myparameter1 += EEPROM.read(5) * 256;
 
-
 	delay(100);  //Delay needed, otherwise showcolor doesn't light up all leds or they produce errors after turning on the power supply - you will need to experiment
 	LEDS.showColor(CHSV(myHue, mySaturation, myValue));
 
 	// Si quiero siempre activar el AP entonces habilitar esta linea
-	//WiFi.disconnect(); // Borra ssid y password 
+	//WiFi.disconnect(); // Borra ssid y password
 
 	Serial.println();
 	Serial.print(F("Heap: ")); Serial.println(system_get_free_heap_size());
@@ -663,7 +629,6 @@ void setup() {
 		fadeToBlackBy(c_leds[0], 480, 32);
 	}
 
-
 	// ---------------------------------
 
    // Actualiza la lista de efectos en la pagina web
@@ -679,12 +644,9 @@ void setup() {
 	//herokuWs.beginSocketIO("app-gnk-p5js.herokuapp.com", 80); // for socket.io  client library
 	//herokuWs.beginSocketIO(herokuHost, 80);
 	herokuWs.begin(herokuHost, herokuport);
-   //webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
+	//webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
 	herokuWs.onEvent(wsVideoEvent);
-
-
 }
-
 
 /*
 -------------------------------------------------------------------
@@ -696,53 +658,36 @@ void loop()
 	EVERY_N_MILLISECONDS(500) {                           // FastLED based non-blocking delay to update/display the sequence.
 		ledState = !ledState;
 		digitalWrite(LED_BUILTIN, ledState);
-
 	}
 	h = hue;
-	settingsServerTask();
+	settingsServerTask(); // OTA and client handle
 	//webSocket.loop();// handles websockets
 	EVERY_N_SECONDS(5) {
 		sendHeartBeat(); // envia el json de HB} al cliente WEB
 	}
 
+	// For discovering parameters of examples I reccomend to
+	// tinker with a renamed copy ...
 
-	// AutoRun();
-	 // Comment AutoRun out and test examples seperately here
-
-	 //Dots2();
-	 //RainbowTriangle();
-	 //ShowFrame();
-	 //Caleidoscope1();
-	 // all oscillator based:
-	 //Serial.println("dots1");
-	 //for (int i = 0; i < 300; i++) { Dots1(); }
-	 //for (int i = 0; i < 300; i++) { Dots2(); }
-	 //Serial.println("slowmandala");
-	 //SlowMandala();
-	 //Serial.println("slowmandala2");
-	 //SlowMandala2();
-	 //Serial.println("slowmandala3");
-	 //SlowMandala3();
-	 //Serial.println("Mandala8");
-	 //for (int i = 0; i < 300; i++) { Mandala8(); }
-
-	 // For discovering parameters of examples I reccomend to
-	 // tinker with a renamed copy ...
-
-	 // Call the current pattern function once, updating the 'leds' array
+	// Call the current pattern function once, updating the 'leds' array
 	uint8_t arg1 = gPatternsAndArguments[gCurrentPatternNumber].mArg1;
 	uint8_t arg2 = gPatternsAndArguments[gCurrentPatternNumber].mArg2;
 	TwoArgumentPattern pat = gPatternsAndArguments[gCurrentPatternNumber].mPattern;
-
-	pat(arg1, arg2);
-	//hue += 4;
-
-	// send the 'leds' array out to the actual LED strip
-   // FastLED.show(); // los tengo dentro de las funciones
-	// insert a delay to keep the framerate modest
-  //  FastLED.delay(1000 / 120); // about sixty FPS
-
-	EVERY_N_SECONDS(101) { nextPattern(); } // change patterns periodically
+	if (myOnOff == 0) // Turn off command ?
+	{
+		FastLED.clear(true);
+	}
+	else
+	{
+		//hue += 4;
+		if (myMode == 1) // is in autorun?
+		{
+			EVERY_N_SECONDS(20) { nextPattern(); } // change patterns periodically
+		}
+		
+			pat(arg1, arg2);
+		
+	}
 
 	if (WiFi.status() == WL_CONNECTED) {
 		//herokuWs.loop(); // handles Heroku socket.io loop
@@ -750,18 +695,5 @@ void loop()
 	}
 	else {
 		herokuWs.disconnect();
-	} 
-
+	}
 }
-
-void nextPattern()
-{
-	// add one to the current pattern number, and wrap around at the end
-	//const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof(gPatternsAndArguments[0]);
-	gCurrentPatternNumber = (gCurrentPatternNumber + 1) % numberOfPatterns;
-	Serial.print("funcion : \t");
-	Serial.println(gCurrentPatternNumber);
-	sendAll(); // lo pongo aqui , pero en realidad deberia ser solo cuando hay un cambio de efecto
-
-}
-
