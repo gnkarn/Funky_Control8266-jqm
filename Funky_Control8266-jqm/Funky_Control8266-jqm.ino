@@ -55,13 +55,13 @@ TODO:
  */
 
  // modificado por GNK para matriz de 20x24
- // la fncion de conversion interpola 2 valores de x para generar un x nuevo, pues son mas leds fisicos en x
+ // la funcion de conversion interpola 2 valores de x para generar un x nuevo, pues son mas leds fisicos en x
  // y promedia dos valores de Y para calcular un Y en la matriz de salida , pues son menos
- // sin terminar incopora lectura de port serie para cambiar parametros, ver listas de lectura
- // http://robotic-controls.com/learn/arduino/reading-numbers-serial
+ //no utilizado:lectura de port serie para cambiar parametros, ver listas de lectura
+ // no utilizado:  http://robotic-controls.com/learn/arduino/reading-numbers-serial
  // https://gist.github.com/kasperkamperman/6c7c256f7042a3ca5118
- // y para excritura desde teensy a processing ver https://github.com/marmilicious/FastLED_2_Processing/blob/master/test_serial_from_arduino_v10.pde
- // oct-2016 modificado para 8266 e incorpora manejo de paterns
+ // No utilizado:  y para excritura desde teensy a processing ver https://github.com/marmilicious/FastLED_2_Processing/blob/master/test_serial_from_arduino_v10.pde
+ // oct-2016 modificado para 8266 e incorpora manejo de patterns
  // funciona ok con sonido
  // 21-8 integra lecdcontrol8266 matriz jqm, con funkyCloudsApa102-8266 este ultimo, funciona ok, con sonido, no tiene integrado la interface de aplicacion web.
 
@@ -445,31 +445,14 @@ typedef struct {
 } TwoArgumentPatterWithArgumentValues;
 
 TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
+	{ LedsNoise		,"LedsNoise",	0/* nada*/		,0	 /* nada1*/ },//32
 	{ Dots1			,"Dots1",		1	/*color1 */	, 1 /*color2 */ },
 	{ Dots2			,"Dots2",		125 /*scale*/	, 0 /*no se usa*/},
 	{ SlowMandala2,	"SlowMandala2",	127 /*dim*/		, 0 /*no se usa*/},
 	{ SlowMandala3,	"SlowMandala3",	127 /*dim*/		, 0 /*no se usa*/},
 	{ Mandala8		,"Mandala8",	86 /*dim*/		, 0 /*no se usa*/},
-	{ MSGEQtest		,"MSGEQtest",	120 /* scale*/	, 0 /*no se usa*/ },
-	{ MSGEQtest2	,"MSGEQtest2",	127 /*scale*/	, 200 /*color*/},
-	{ MSGEQtest3	,"MSGEQtest3",	120 /*scale*/	, 100 /*color*/ },
-	{ MSGEQtest4	,"MSGEQtest4",	240 /* dim*/	, 10 /* hmult*/},
-	{ AudioSpiral	,"AudioSpiral",	130 /*color1*/	, 122 /*color*/},
-	{ MSGEQtest5	,"MSGEQtest5",	120 /*dim*/		, 10 /*hmult*/},
-	{ MSGEQtest6	,"MSGEQtest6",	170 /*dim*/		, 10 /*hmult*/ },
-	{ MSGEQtest7	,"MSGEQtest7",	240 /*dim*/		, 10 /*hmult*/ },// revisar
-	{ MSGEQtest8	,"MSGEQtest8",	240 /*dim*/		, 10 /*hmult*/ },// revisar
-	{ MSGEQtest9	,"MSGEQtest9",	27 /*dim*/		, 255 /*s*/},
-	{ CopyTest		,"CopyTest",	200 /* dim*/	, 10 /*hmult*/ },
-	{ CopyTest2		,"CopyTest2",	200 /* dim*/	, 10 /*hmult*/ },
-	{ Audio1		,"Audio1",		10 /*dim*/		,15 /*hmult*/},
-	{ Audio2		,"Audio2",		120 /*dim*/		,15 /*hmult*/ },
-	{ Audio3		,"Audio3",		255 /*dim*/		,27 /*hmult*/ },
-	{ Audio4		,"Audio4",		12 /*dim*/		,32 /*hdiv*/ },
 	{ CaleidoTest2	,"CaleidoTest2",	240 /* dim*/	,150 /* color_ofset*/},
 	{ CaleidoTest1	,"CaleidoTest1",	240 /* dim*/	,32 /* hdiv*/ },
-	{ Audio5		,"Audio5",		9 /*dim*/		,30 /* hmult*/},
-	{ Audio6		,"Audio6",		200 /*dim*/		,10 /* hmult*/ },
 	{ NoiseExample1	,"NoiseExample1",	1 /* hpow2*/	,255 /* s*/ },
 	{ NoiseExample2	,"NoiseExample2",	100/*noisez*/	,100 /* scale*/},
 	{ NoiseExample3	,"NoiseExample3",	100/*noisez*/	,100 /* scale*/ },
@@ -477,7 +460,6 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ NoiseExample5	,"NoiseExample5",	100/*noisez*/	,254 /* scale300*/ },// 29
 	{ NoiseExample6	,"NoiseExample6",	50/*hofset*/	,200 /* scale*/ },
 	{ NoiseExample7	,"NoiseExample7",	0/*nada*/		,100 /* scale*/ },
-	{ LedsNoise		,"LedsNoise",	0/* nada*/		,0	 /* nada1*/ },//32
 	{ circulo1		,"Circulo1",	0/* nada*/		,0	 /* nada1*/ },
 	{ anillos		,"anillos",	0/* nada*/		,0	 /* nada1*/ },
 	{ HorizontalStripes		,"HorizontalStripes",	0/* nada*/		,0	 /* nada1*/ },
@@ -486,6 +468,24 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ VertMirror		,"VertMirror",	0/* nada*/		,0	 /* nada1*/ },
 	{ QuadMirror		,"QuadMirror",	0/* nada*/		,0	 /* nada1*/ },
 	{ circulo2		,"circulo2",	0/* nada*/		,0	 /* nada1*/ },
+	{ MSGEQtest		,"MSGEQtest",	120 /* scale*/	, 0 /*no se usa*/ },
+	{ MSGEQtest2	,"MSGEQtest2",	127 /*scale*/	, 200 /*color*/ },
+	{ MSGEQtest3	,"MSGEQtest3",	120 /*scale*/	, 100 /*color*/ },
+	{ MSGEQtest4	,"MSGEQtest4",	240 /* dim*/	, 10 /* hmult*/ },
+	{ AudioSpiral	,"AudioSpiral",	130 /*color1*/	, 122 /*color*/ },
+	{ MSGEQtest5	,"MSGEQtest5",	120 /*dim*/		, 10 /*hmult*/ },
+	{ MSGEQtest6	,"MSGEQtest6",	170 /*dim*/		, 10 /*hmult*/ },
+	{ MSGEQtest7	,"MSGEQtest7",	240 /*dim*/		, 10 /*hmult*/ },// revisar
+	{ MSGEQtest8	,"MSGEQtest8",	240 /*dim*/		, 10 /*hmult*/ },// revisar
+	{ MSGEQtest9	,"MSGEQtest9",	27 /*dim*/		, 255 /*s*/ },
+	{ CopyTest		,"CopyTest",	200 /* dim*/	, 10 /*hmult*/ },
+	{ CopyTest2		,"CopyTest2",	200 /* dim*/	, 10 /*hmult*/ },
+	{ Audio1		,"Audio1",		10 /*dim*/		,15 /*hmult*/ },
+	{ Audio2		,"Audio2",		120 /*dim*/		,15 /*hmult*/ },
+	{ Audio3		,"Audio3",		255 /*dim*/		,27 /*hmult*/ },
+	{ Audio4		,"Audio4",		12 /*dim*/		,32 /*hdiv*/ },
+	{ Audio5		,"Audio5",		9 /*dim*/		,30 /* hmult*/ },
+	{ Audio6		,"Audio6",		200 /*dim*/		,10 /* hmult*/ },
 	{ one_color_allHSV ,"one_color_allHSV",	41/* h*/		,180	 /* b*/ },
 	{ video				,"video"	,0 /* nada1*/		,0 /* nada2 */ }
 
