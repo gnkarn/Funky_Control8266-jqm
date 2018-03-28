@@ -47,15 +47,7 @@ void processResponse(const char* response , size_t length) {
 	//USE_SERIAL.printf("[WSc] get text: %s\n", response);
 }
 
-void sendAck()
-{
-	//Serial.print("ack : \t");
-	String json = "{\"msgName\":\"recibido\"}";
-	//ESP8266WebServer.send(200, "text/json", json); // para webserver normal
-	herokuWs.sendTXT(json); // para WS
-	Serial.println(json);
-	//json = String(); // empty 
-}
+
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
 
@@ -229,83 +221,4 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 }
 
-void  wsVideoEvent(WStype_t type, uint8_t * payload, size_t length) {
-	// this to receive a message from the Heroku Server 
-	//const char* myjson = 
-	// see https://bblanchon.github.io/ArduinoJson/faq/whats-the-best-way-to-use-the-library/
-	// created with 
-	// see also example at https://uu.diva-portal.org/smash/get/diva2:1104261/FULLTEXT01.pdf
-
-	if (gPatternsAndArguments[gCurrentPatternNumber].mName == "video")
-	{
-
-
-		switch (type) {
-		case WStype_DISCONNECTED:
-			USE_SERIAL.printf("[WSc] Disconnected!\n");
-			isConnectedH = false;
-			break;
-		case WStype_CONNECTED:
-			USE_SERIAL.printf("[WSc] Connected to url: %s\n", payload);
-			isConnectedH = true;
-
-			//IPAddress ip = webSocket.remoteIP(num);
-			//USE_SERIAL.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-
-			// send message to server when Connected
-			// socket.io upgrade confirmation message (required)
-			herokuWs.sendTXT("5 ESP connected");	// 5
-			break;
-		case WStype_TEXT:
-			//parse JSON objet
-			processResponse((char*)payload, length);
-
-			if (msgName == "msgArray1")
-			{
-				// send "recibido" back to unlock new frame
-				///sendAck();
-				//USE_SERIAL.printf("[text] Connected Ack");
-			}
-			/*
-			String text2 = String((char *)&payload);
-			//USE_SERIAL.printf("4  Received from Heroku (video): %s\n", &payload[0]);
-
-			USE_SERIAL.printf("5 [%u] Received from Heroku (video): %s\n", length, text2.c_str());
-			// if current efect is video continue else jump
-			if (text2.startsWith("Y")) {      // video message
-				String xVal = (text2.substring(text2.indexOf("Y") + 1, text2.length()));
-			}
-			*/
-			// transfer objet to ledMatrix
-			//end
-			break;
-
-		case WStype_BIN:
-			USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
-			//herokuWs.sendBIN(payload, length); //Do not enable for final production
-			//hexdump(payload, length);//	
-			memcpy(c_leds[0], payload, length * sizeof(uint8_t));
-			sendAck();
-			//USE_SERIAL.printf("[text] Connected Ack");
-			//Serial.println();
-			// send data to server		
-			break;
-		}
-	}
-	else
-	{
-		return;
-	}
-}
-
-void herokuHeartBeat() {
-	if (isConnectedH) {
-		uint64_t now = millis();
-		if ((now - heartbeatTimestamp) > HEARTBEAT_INTERVAL) {
-			heartbeatTimestamp = now;
-			// socket.io heartbeat message
-			herokuWs.sendTXT(ESP_HeartBeat);
-		}
-	}
-}
 

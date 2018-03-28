@@ -1,5 +1,24 @@
 #include <Arduino.h>
+#define SENSORNAME "cuadro_led" //change this to whatever you want to call your device
+/******************************** GLOBALS for fade/flash *******************************/
 
+bool stateOn = false;
+int transitionTime = 0;
+byte red = 255;
+byte green = 255;
+byte blue = 255;
+byte brightness = 255;
+
+bool flash = false;
+bool startFlash = false;
+int flashLength = 0;
+unsigned long flashStartTime = 0;
+byte flashRed = red;
+byte flashGreen = green;
+byte flashBlue = blue;
+byte flashBrightness = brightness;
+
+// globals end
 
 
 /*
@@ -316,7 +335,7 @@ void Copy(byte x0, byte y0, byte x1, byte y1, byte x2, byte y2) {
 // rotate + copy triangle (8*8)
 void RotateTriangle() {
 	for (int x = 1; x < 8; x++) {
-		for (int y = 0; y<x; y++) {
+		for (int y = 0; y < x; y++) {
 			leds[XY_Chico(x, 7 - y)] = leds[XY_Chico(7 - x, y)];
 		}
 	}
@@ -325,7 +344,7 @@ void RotateTriangle() {
 // mirror + copy triangle (8*8)
 void MirrorTriangle() {
 	for (int x = 1; x < 8; x++) {
-		for (int y = 0; y<x; y++) {
+		for (int y = 0; y < x; y++) {
 			leds[XY_Chico(7 - y, x)] = leds[XY_Chico(7 - x, y)];
 		}
 	}
@@ -607,14 +626,14 @@ Fx = kMatrixWidth/CUSTOM_WIDTH;
 // describe your matrix layout here:
 // P.S. If you use a 8*8 just remove the */ and /*
 void RenderCustomMatrix() {
-	
+
 	//    resizePixels(leds, int w1, int h1, int w2, int h2) 
 	resizePixels(leds, WIDTH, HEIGHT, CUSTOM_WIDTH, CUSTOM_HEIGHT); // hacer flexible 
 
 	// Copy  led colors from leds[src .. src+9] to leds[dest .. dest+9]
 	// memmove( &leds[dest], &leds[src], 10 * sizeof( CRGB) );
 	//memmove8(&leds2[0], &tempLed[0], CUSTOM_NUM_LEDS * sizeof(CRGB)); // eliminado paso directamente a leds2 sin templed
-	
+
 }
 
 //*** Prueba de matriz 
@@ -846,9 +865,9 @@ void resizePixels(CRGB* pixels, int w1, int h1, int w2, int h2) {
 	double x_ratio = w1 / (double)w2;
 	double y_ratio = h1 / (double)h2;
 	double px, py;
-	
-	for (int i = 0; i<h2; i++) {
-		for (int j = 0; j<w2; j++) {
+
+	for (int i = 0; i < h2; i++) {
+		for (int j = 0; j < w2; j++) {
 			px = floor(j*x_ratio); // Round down value
 			py = floor(i*y_ratio);
 			/* Serial.print("px ");
@@ -863,11 +882,11 @@ void resizePixels(CRGB* pixels, int w1, int h1, int w2, int h2) {
 			Serial.println(",");
 			*/
 			//temp[(i*w2) + j] = pixels[(int)((py*w1) + px)];
-			c_leds(j,i) = pixels[(int)(XY_Chico(px, py))]; // antes templed
+			c_leds(j, i) = pixels[(int)(XY_Chico(px, py))]; // antes templed
 		}
 	}
 	//Serial.print("out ");// debug
-	
+
 	return;
 
 }
@@ -1120,4 +1139,214 @@ void sendHeartBeat()
 	json = String();
 }
 
+// functions definitions for mqtt - to HASS
+// https://github.com/bruhautomation/ESP-MQTT-JSON-Digital-LEDs/blob/master/ESP_MQTT_Digital_LEDs/ESP_MQTT_Digital_LEDs.ino
+
+/*
+SAMPLE PAYLOAD:
+{
+"brightness": 120,
+"color": {
+"r": 255,
+"g": 100,
+"b": 100
+},
+"flash": 2,
+"transition": 5,
+"state": "ON"
+}
+*/
+
+
+
+/********************************** START CALLBACK*****************************************/
+void callback(char* topic, byte* payload, unsigned int length) {
+	Serial.print("Message arrived [");
+	Serial.print(topic);
+	Serial.print("] ");
+
+	char message[length + 1];
+	for (int i = 0; i < length; i++) {
+		message[i] = (char)payload[i];
+	}
+	message[length] = '\0';
+	Serial.println(message);
+
+	if (!processJson(message)) {
+		return;
+	}
+
+	/*if (stateOn) {
+
+		realRed = map(red, 0, 255, 0, brightness);
+		realGreen = map(green, 0, 255, 0, brightness);
+		realBlue = map(blue, 0, 255, 0, brightness);
+	}
+	else {
+
+		realRed = 0;
+		realGreen = 0;
+		realBlue = 0;
+	}*/
+
+	Serial.println(effect);
+
+	//startFade = true;
+	//inFade = false; // Kill the current fade
+
+	sendState();
+}
+
+
+
+/********************************** START PROCESS JSON*****************************************/
+bool processJson(char* message) {
+	StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
+
+	JsonObject& root = jsonBuffer.parseObject(message);
+
+	if (!root.success()) {
+		Serial.println("parseObject() failed");
+		return false;
+	}
+
+	if (root.containsKey("state")) {
+		if (strcmp(root["state"], on_cmd) == 0) {
+			stateOn = true;
+		}
+		else if (strcmp(root["state"], off_cmd) == 0) {
+			stateOn = false;
+
+		}
+	}
+
+	// If "flash" is included, treat RGB and brightness differently
+	if (root.containsKey("flash")) {
+		flashLength = (int)root["flash"] * 1000;
+
+		oldeffectString = effectString;
+
+		if (root.containsKey("brightness")) {
+			myBrightness = root["brightness"];
+		}
+		else {
+			myBrightness = brightness;
+		}
+
+		if (root.containsKey("color")) {
+			flashRed = root["color"]["r"];
+			flashGreen = root["color"]["g"];
+			flashBlue = root["color"]["b"];
+		}
+		else {
+			flashRed = red;
+			flashGreen = green;
+			flashBlue = blue;
+		}
+
+		if (root.containsKey("effect")) {
+			effect = root["effect"];
+			effectString = effect;
+			//twinklecounter = 0; //manage twinklecounter
+		}
+
+		if (root.containsKey("transition")) {
+			transitionTime = root["transition"];
+		}
+		else if (effectString == "solid") {
+			transitionTime = 0;
+		}
+
+
+		flash = true;
+		startFlash = true;
+	}
+	else { // Not flashing
+		flash = false;
+
+
+		if (root.containsKey("color")) {
+			red = root["color"]["r"];
+			green = root["color"]["g"];
+			blue = root["color"]["b"];
+		}
+
+		//if (root.containsKey("color_temp")) {
+		//	//temp comes in as mireds, need to convert to kelvin then to RGB
+		//	int color_temp = root["color_temp"];
+		//	unsigned int kelvin = MILLION / color_temp;
+
+		//	temp2rgb(kelvin);
+
+		//}
+
+		if (root.containsKey("brightness")) {
+			myBrightness = root["brightness"];
+		}
+
+		if (root.containsKey("effect")) {
+			effect = root["effect"];
+			effectString = effect;
+			//twinklecounter = 0; //manage twinklecounter
+		}
+
+		if (root.containsKey("transition")) {
+			transitionTime = root["transition"];
+		}
+		else if (effectString == "solid") {
+			transitionTime = 0;
+		}
+
+	}
+
+	return true;
+}
+
+
+
+/********************************** START SEND STATE*****************************************/
+void sendState() {
+	StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
+
+	JsonObject& root = jsonBuffer.createObject();
+	// Step 2: Build object tree in memory
+	root["state"] = (stateOn) ? on_cmd : off_cmd;
+	JsonObject& color = root.createNestedObject("color");
+	color["r"] = red;
+	color["g"] = green;
+	color["b"] = blue;
+
+	root["brightness"] = myBrightness;
+	root["effect"] = effectString.c_str();
+
+
+	char buffer[root.measureLength() + 1];
+	root.printTo(buffer, sizeof(buffer));
+
+	client.publish(light_state_topic, buffer, true);
+}
+
+
+
+/********************************** START RECONNECT*****************************************/
+void reconnect() {
+	// Loop until we're reconnected
+	while (!client.connected()) {
+		Serial.print("Attempting MQTT connection...");
+		// Attempt to connect
+		if (client.connect(SENSORNAME, mqtt_username, mqtt_password)) {
+			Serial.println("connected");
+			client.subscribe(light_set_topic);
+			FastLED.clear(1);
+			sendState();
+		}
+		else {
+			Serial.print("failed, rc=");
+			Serial.print(client.state());
+			Serial.println(" try again in 5 seconds");
+			// Wait 5 seconds before retrying
+			delay(5000);
+		}
+	}
+}
 

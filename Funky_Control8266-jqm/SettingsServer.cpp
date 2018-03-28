@@ -10,14 +10,20 @@
 #include <FastLED.h>
 
 #define DBG_OUTPUT_PORT Serial
+//**************************** FOR OTA **************************************************/
+#define SENSORNAME "cuadro_led" //change this to whatever you want to call your device
+#define OTApassword "2394" //the password you will need to enter to upload remotely via the ArduinoIDE
+int OTAport = 8266;
 
-const char* pvhostname = "GNK_ESP1_AP"; // Nombre del ESP
+const char* pvhostname = SENSORNAME; // Nombre del ESP
 
-ESP8266WebServer server(80); // create the server object
 MDNSResponder mdns;
 ESP8266HTTPUpdateServer httpUpdater;
 
-void showWifiConfigAPMessage(void);
+WifiManagerWebServerType server(80); // create the server object
+
+//void showWifiConfigAPMessage(void);
+
 
 void handle_root(){
   server.send(200, "text/plain", "Cuadro de leds GNK");
@@ -136,8 +142,8 @@ void handle_reboot(void)
    
 
 void startSettingsServer(void){
-    SPIFFS.begin();
-  {
+	SPIFFS.begin();
+	{
     Dir dir = SPIFFS.openDir("/");
     while (dir.next()) {    
       String fileName = dir.fileName();
@@ -146,12 +152,39 @@ void startSettingsServer(void){
     }
     DBG_OUTPUT_PORT.printf("\n");
   }
+  
+  //OTA SETUP
+  ArduinoOTA.setPort(OTAport);
+  // Hostname defaults to esp8266-[ChipID]
+  ArduinoOTA.setHostname(SENSORNAME);
 
-  ArduinoOTA.setHostname(pvhostname);
-  ArduinoOTA.setPassword((const char *)"");
-  ArduinoOTA.onError([](ota_error_t error) { ESP.restart(); });
- 
+  // No authentication by default
+  ArduinoOTA.setPassword((const char *)OTApassword);
+
+  ArduinoOTA.onStart([]() {
+	  Serial.println("Starting");
+  });
+  ArduinoOTA.onEnd([]() {
+	  Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+	  Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+	  Serial.printf("Error[%u]: ", error);
+	  if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+	  else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+	  else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+	  else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+	  else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
   ArduinoOTA.begin();
+
+  // end ota setup
+
+
+//  ArduinoOTA.onError([](ota_error_t error) { ESP.restart(); });
+
   
   server.on("/refresh", handle_refresh);
   server.on("/wifisetup",handle_wifisetup);
@@ -190,6 +223,8 @@ void settingsServerTask(void){
 void showWifiConfigAPMessage(WiFiManager *myWiFiManager)
 {
 }
+
+
 
 void setupWiFi(void){
     // The extra parameters to be configured (can be either global or just in the setup)

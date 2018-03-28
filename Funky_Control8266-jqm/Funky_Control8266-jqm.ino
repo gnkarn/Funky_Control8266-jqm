@@ -73,7 +73,7 @@ TODO:
 
 #include <ArduinoOTA.h>
 // NOTE: This requires btomer's fork of the WiFiManager library (https://github.com/btomer/WiFiManager)
-#define WIFI_MANAGER_USE_ASYNC_WEB_SERVER
+//#define WIFI_MANAGER_USE_ASYNC_WEB_SERVER
 #include <WiFiManager.h>
 
 #include <ESP8266WiFi.h>
@@ -82,7 +82,7 @@ TODO:
 #include <FastLED.h>
 #include <Hash.h>
 #include <EEPROM.h>
-#include <ESPAsyncWebServer.h>   // async mod
+//#include <ESPAsyncWebServer.h>   // async mod
 #include <WebSockets.h>
 #include <WebSocketsServer.h>
 #include "SettingsServer.h"
@@ -96,6 +96,42 @@ TODO:
 #include <LEDMatrix.h>
 // ver https://github.com/AaronLiddiment/LEDMatrix/wiki
 #include <coordinates.h> // ahora incluido como una libreria
+
+#include <PubSubClient.h>
+
+
+
+/************ WIFI and MQTT Information (CHANGE THESE FOR YOUR SETUP) ******************/
+//const char* ssid = "YourSSID"; //type your WIFI information inside the quotes
+//const char* password = "YourWIFIpassword";
+const char* mqtt_server = "192.168.0.60";
+const char* mqtt_username = "";
+const char* mqtt_password = "";
+const int mqtt_port = 1883;
+
+WiFiClient espClient;
+PubSubClient client(espClient); // cliente mqtt
+
+
+
+
+
+/************* MQTT TOPICS (change these topics as you wish)  **************************/
+const char* light_state_topic = "bruh/porch";
+const char* light_set_topic = "bruh/porch/set";
+
+const char* on_cmd = "ON";
+const char* off_cmd = "OFF";
+const char* effect = "solid";
+String effectString = "solid";
+String oldeffectString = "solid";
+
+/****************************************FOR JSON***************************************/
+// Step 1: DEfinir Json buffer :Reserve memory space
+const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
+#define MQTT_MAX_PACKET_SIZE 512
+
+
 
 // json setup ofr the Video matrix json object
 //sized using  https://bblanchon.github.io/ArduinoJson/assistant/index.html
@@ -120,7 +156,7 @@ WebSocketsClient herokuWs;
 uint64_t heartbeatTimestamp = 0;
 bool isConnectedH = false; // connected to Heroku?
 #define  ESP_HeartBeat "2"
-String herokuHost = "app-gnk-p5js.herokuapp.com"; // for websocketclien
+String herokuHost = "app-gnk-p5js.herokuapp.com"; // for websocketclient
 int herokuport = 80;
 const char*  msgName = ""; //Heroku message name
 
@@ -517,17 +553,17 @@ void setup() {
 	// -------------Solo un ejemplo aun no lo estoy usando ----------------
 	// Step 1: DEfinir Json buffer :Reserve memory space
 	//
-	StaticJsonBuffer<200> jsonBuffer;// Step 1: Reserve memory space
+	//StaticJsonBuffer<200> jsonBuffer;// Step 1: Reserve memory space
 
   // Step 2: Build object tree in memory
 
-	JsonObject& root = jsonBuffer.createObject();
-	root["sensorico1"] = "gps";
-	root["time"] = 1351824120;
+	//JsonObject& root = jsonBuffer.createObject();
+	//root["sensorico1"] = "gps";
+	//root["time"] = 1351824120;
 
-	JsonArray& miJarray = root.createNestedArray("JSONarray");
-	miJarray.add(48.756080, 6);  // 6 is the number of decimals to print
-	miJarray.add(2.302038, 6);   // if not specified, 2 digits are printed
+	//JsonArray& miJarray = root.createNestedArray("JSONarray");
+	//miJarray.add(48.756080, 6);  // 6 is the number of decimals to print
+	//miJarray.add(2.302038, 6);   // if not specified, 2 digits are printed
 	// FIN ejemplo de JSON ------------------------------------------------
 
    // firstContact();  // Connect with Processing. Hello, is anyone out there? (eliminado pues no uso el port serie con processing)
@@ -592,6 +628,11 @@ void setup() {
 	startSettingsServer();
 	webSocket.begin();
 	webSocket.onEvent(webSocketEvent);
+	//-------------- mqtt setup
+	client.setServer(mqtt_server, mqtt_port);
+	client.setCallback(callback);
+
+
 
 	Serial.print("Programa FunkyControl JQM-Async  Iniciado  ");// debug
 
@@ -640,12 +681,7 @@ void setup() {
 	// matrix data will come from this server
 	// pending to implement a Heart beat with Heroku
 	// herokuWs.beginSocketIO(herokuHost , 80); // for the  websocket client library
-
-	//herokuWs.beginSocketIO("app-gnk-p5js.herokuapp.com", 80); // for socket.io  client library
-	//herokuWs.beginSocketIO(herokuHost, 80);
-	herokuWs.begin(herokuHost, herokuport);
-	//webSocket.setAuthorization("user", "Password"); // HTTP Basic Authorization
-	herokuWs.onEvent(wsVideoEvent);
+	
 }
 
 /*
@@ -662,6 +698,9 @@ void loop()
 	h = hue;
 	settingsServerTask(); // OTA and client handle
 	//webSocket.loop();// handles websockets
+	if (!client.connected()) {
+		reconnect();
+	}
 	EVERY_N_SECONDS(5) {
 		sendHeartBeat(); // envia el json de HB} al cliente WEB
 	}
@@ -690,10 +729,9 @@ void loop()
 	}
 
 	if (WiFi.status() == WL_CONNECTED) {
-		//herokuWs.loop(); // handles Heroku socket.io loop
-		herokuHeartBeat(); // send HB to Heroku WS server
+		
 	}
 	else {
-		herokuWs.disconnect();
+		
 	}
 }
