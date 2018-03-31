@@ -21,6 +21,8 @@ byte flashBrightness = brightness;
 // globals end
 
 
+
+
 /*
 -------------------------------------------------------------------
 Basic Helper functions:
@@ -1120,7 +1122,7 @@ void sendAll()
 	json += "}";
 
 	// ESP8266WebServer.send(200, "text/json", json); // para webserver normal
-	webSocket.broadcastTXT(json); // para WS
+	// webSocket.broadcastTXT(json); //HASS
 	//USE_SERIAL.printf("json  : \t" ); // debug
 	//USE_SERIAL.print(json);			// debug
 	json = String();
@@ -1134,7 +1136,7 @@ void sendHeartBeat()
 	json += "\"messageName\":\"js_hbe\"";
 	json += "}";
 	//ESP8266WebServer.send(200, "text/json", json); // para webserver normal
-	webSocket.broadcastTXT(json); // para WS
+	// webSocket.broadcastTXT(json); // HASS
 	//USE_SERIAL.print(json);			// debug
 	json = String();
 }
@@ -1209,7 +1211,7 @@ bool processJson(char* message) {
 		Serial.println("parseObject() failed");
 		return false;
 	}
-
+// verify if state= on_cmd if string compare are equal result is =0
 	if (root.containsKey("state")) {
 		if (strcmp(root["state"], on_cmd) == 0) {
 			stateOn = true;
@@ -1247,6 +1249,7 @@ bool processJson(char* message) {
 		if (root.containsKey("effect")) {
 			effect = root["effect"];
 			effectString = effect;
+			gCurrentPatternNumber = getposition();
 			//twinklecounter = 0; //manage twinklecounter
 		}
 
@@ -1287,6 +1290,8 @@ bool processJson(char* message) {
 		if (root.containsKey("effect")) {
 			effect = root["effect"];
 			effectString = effect;
+			gCurrentPatternNumber = getposition();
+
 			//twinklecounter = 0; //manage twinklecounter
 		}
 
@@ -1350,3 +1355,14 @@ void reconnect() {
 	}
 }
 
+
+// returns the array index that matches the string value in mName .
+int getposition(void)
+{
+	for (int i = 0; i <  sizeof(gPatternsAndArguments); i++)
+	{
+		if (gPatternsAndArguments[i].mName == effect)
+			return (int)i;
+	}
+	return -1;
+};

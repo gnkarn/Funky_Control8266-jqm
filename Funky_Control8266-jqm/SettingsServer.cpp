@@ -17,7 +17,7 @@ int OTAport = 8266;
 
 const char* pvhostname = SENSORNAME; // Nombre del ESP
 
-MDNSResponder mdns;
+ MDNSResponder mdns; // eliminado x debug
 ESP8266HTTPUpdateServer httpUpdater;
 
 WifiManagerWebServerType server(80); // create the server object
@@ -142,7 +142,7 @@ void handle_reboot(void)
    
 
 void startSettingsServer(void){
-	SPIFFS.begin();
+	/*SPIFFS.begin();
 	{
     Dir dir = SPIFFS.openDir("/");
     while (dir.next()) {    
@@ -151,7 +151,7 @@ void startSettingsServer(void){
       DBG_OUTPUT_PORT.printf("FS File: %s, size: %s\n", fileName.c_str(), formatBytes(fileSize).c_str());
     }
     DBG_OUTPUT_PORT.printf("\n");
-  }
+  }*/
   
   //OTA SETUP
   ArduinoOTA.setPort(OTAport);
@@ -185,29 +185,12 @@ void startSettingsServer(void){
 
 //  ArduinoOTA.onError([](ota_error_t error) { ESP.restart(); });
 
-  
-  server.on("/refresh", handle_refresh);
-  server.on("/wifisetup",handle_wifisetup);
-  server.on("/reboot", handle_reboot);
-  server.on("/brightness",handle_brightness);
-   //list directory
-  server.on("/list", HTTP_GET, handleFileList);
-  server.on("/description.xml", HTTP_GET, [](){ //SSDP server added
-      SSDP.schema(server.client());
-  });
 
- //called when the url is not defined here
-  //use it to load content from SPIFFS
-  server.onNotFound([](){
-    if(!handleFileRead(server.uri()))
-      server.send(404, "text/plain", "FileNotFound");
-  });
-    httpUpdater.setup(&server); //setup update via webpage
+ //  server.begin(); //  hass
+ //  Serial.println("HTTP server started"); // hass
 
-  server.begin();
-  Serial.println("HTTP server started");
   //ArduinoOTA handles mdns service
- if(mdns.begin("GNK_ESP1_AP", WiFi.localIP())) {
+ if(mdns.begin("GNK_ESP1_AP", WiFi.localIP())) { // eliminado para debug
    Serial.println(" MDNS responder  STARTED!");
   }
   
@@ -217,7 +200,7 @@ void startSettingsServer(void){
 
 void settingsServerTask(void){
   ArduinoOTA.handle();
-  server.handleClient();
+  // server.handleClient();//   hass
 }
 
 void showWifiConfigAPMessage(WiFiManager *myWiFiManager)

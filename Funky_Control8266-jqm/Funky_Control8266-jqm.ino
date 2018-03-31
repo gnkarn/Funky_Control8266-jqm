@@ -73,23 +73,22 @@ TODO:
 
 #include <ArduinoOTA.h>
 // NOTE: This requires btomer's fork of the WiFiManager library (https://github.com/btomer/WiFiManager)
-//#define WIFI_MANAGER_USE_ASYNC_WEB_SERVER
-#include <WiFiManager.h>
+#define WIFI_MANAGER_USE_ASYNC_WEB_SERVER
+// #include <WiFiManager.h> // HASS
 
-#include <ESP8266WiFi.h>
-#include <DNSServer.h>
-#include <WiFiUdp.h>
-#include <FastLED.h>
+#include <ESP8266WiFi.h>//ok
+//#include <DNSServer.h>
+#include <WiFiUdp.h>//ok
+#include <FastLED.h>//ok
 #include <Hash.h>
 #include <EEPROM.h>
-//#include <ESPAsyncWebServer.h>   // async mod
-#include <WebSockets.h>
-#include <WebSocketsServer.h>
+
+// #include <WebSockets.h> // hass
+// #include <WebSocketsServer.h> // hass
 #include "SettingsServer.h"
-#include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266SSDP.h>
-//#include <ESP8266WebServer.h> // incluido en la version async de wifimanager
-#include <ArduinoJson.h>
+
+#include <ArduinoJson.h> //ok
 
 #include <FastLED_GFX.h>
 // para integrar MAtrix example-APA102
@@ -97,7 +96,8 @@ TODO:
 // ver https://github.com/AaronLiddiment/LEDMatrix/wiki
 #include <coordinates.h> // ahora incluido como una libreria
 
-#include <PubSubClient.h>
+#include <PubSubClient.h> //ok
+
 
 
 
@@ -117,8 +117,8 @@ PubSubClient client(espClient); // cliente mqtt
 
 
 /************* MQTT TOPICS (change these topics as you wish)  **************************/
-const char* light_state_topic = "bruh/porch";
-const char* light_set_topic = "bruh/porch/set";
+const char* light_state_topic = "tablero/stat";
+const char* light_set_topic = "tablero/cmnd";
 
 const char* on_cmd = "ON";
 const char* off_cmd = "OFF";
@@ -146,19 +146,10 @@ extern "C" {
 }
 
 // websocket client library , used to connect with Heroku ws server
-#include "WebSocketsClient.h"
+// #include "WebSocketsClient.h" // HASS
 
-//#include <SocketIoClient\SocketIoClient.h>
-// tested with this library but ends with exception 28 https://github.com/timum-viw/socket.io-client
 
-WebSocketsClient herokuWs;
-#define HEARTBEAT_INTERVAL 25000
-uint64_t heartbeatTimestamp = 0;
-bool isConnectedH = false; // connected to Heroku?
-#define  ESP_HeartBeat "2"
-String herokuHost = "app-gnk-p5js.herokuapp.com"; // for websocketclient
-int herokuport = 80;
-const char*  msgName = ""; //Heroku message name
+
 
 // define your LED hardware setup here
 #define DATA_PIN    4// D2sale x gpio 04
@@ -480,6 +471,7 @@ typedef struct {
 	uint8_t mArg2;
 } TwoArgumentPatterWithArgumentValues;
 
+
 TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ LedsNoise		,"LedsNoise",	0/* nada*/		,0	 /* nada1*/ },//32
 	{ Dots1			,"Dots1",		1	/*color1 */	, 1 /*color2 */ },
@@ -528,7 +520,9 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 };
 
-#include "LEDWebsockets.h"
+
+
+// #include "LEDWebsockets.h" //HASS
 
 /*
 -------------------------------------------------------------------
@@ -626,15 +620,15 @@ void setup() {
 
 	setupWiFi(); // ejecuta el WIFIManager
 	startSettingsServer();
-	webSocket.begin();
-	webSocket.onEvent(webSocketEvent);
+	// webSocket.begin();// hass
+	// webSocket.onEvent(webSocketEvent); // hass
 	//-------------- mqtt setup
 	client.setServer(mqtt_server, mqtt_port);
 	client.setCallback(callback);
 
 
 
-	Serial.print("Programa FunkyControl JQM-Async  Iniciado  ");// debug
+	Serial.print("Programa FunkyControl JQM-Async V2.0  Iniciado  ");// debug
 
 	FastLED.setBrightness(BRIGHTNESS);
 	FastLED.clear(true);
@@ -728,10 +722,10 @@ void loop()
 		
 	}
 
-	if (WiFi.status() == WL_CONNECTED) {
-		
+	if (WiFi.status() != WL_CONNECTED) {
+		Serial.print("WIFI Disconnected. Attempting reconnection.");
+		setupWiFi();
+		return;
 	}
-	else {
-		
-	}
+	client.loop(); // mqtt client
 }
