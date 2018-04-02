@@ -98,7 +98,8 @@ TODO:
 
 #include <PubSubClient.h> //ok
 
-
+#define DEBUG_PRINT Serial.print
+#define DEBUG_PRINTLN Serial.println
 
 
 /************ WIFI and MQTT Information (CHANGE THESE FOR YOUR SETUP) ******************/
@@ -110,21 +111,24 @@ const char* mqtt_password = "";
 const int mqtt_port = 1883;
 
 WiFiClient espClient;
-PubSubClient client(espClient); // cliente mqtt
+PubSubClient mqttClient(espClient); // cliente mqtt
 
 
 
 
 
 /************* MQTT TOPICS (change these topics as you wish)  **************************/
-const char* light_state_topic = "tablero/stat";
-const char* light_set_topic = "tablero/cmnd";
-
+ char* light_state_topic = "tablero/stat";
+ char* light_set_topic = "tablero/cmnd";
+#define MQTT_MODE_CMND_TOPIC "tablero/auto-man/cmnd"
+#define MQTT_MODE_STAT_TOPIC "tablero/auto-man/stat"
+#define MQTT_MODE_ON_PAYLOAD "ON" //auto
+#define MQTT_MODE_ON_PAYLOAD "OFF" // man
 const char* on_cmd = "ON";
 const char* off_cmd = "OFF";
-const char* effect = "solid";
-String effectString = "solid";
-String oldeffectString = "solid";
+const char* effect = "Dots1,";
+String effectString = "Dots1,";
+String oldeffectString = "Dots1,";
 
 /****************************************FOR JSON***************************************/
 // Step 1: DEfinir Json buffer :Reserve memory space
@@ -243,7 +247,7 @@ uint8_t       colorLoop = 1;
 // ***** Some Global  Variables ******
 uint8_t myOnOff = 1;					// general on off leds status
 byte myEffect = 1;                  //what animation/effect should be displayed
-uint8_t myMode = 1;					// auto Run mode =1 , manual =0
+bool myMode = 1;					// auto Run mode =1 , manual =0
 
 byte myHue = 33;                    //I am using HSV, the initial settings display something like "warm white" color at the first start
 byte mySaturation = 168;
@@ -623,8 +627,8 @@ void setup() {
 	// webSocket.begin();// hass
 	// webSocket.onEvent(webSocketEvent); // hass
 	//-------------- mqtt setup
-	client.setServer(mqtt_server, mqtt_port);
-	client.setCallback(callback);
+	mqttClient.setServer(mqtt_server, mqtt_port);
+	mqttClient.setCallback(mqttCallback);
 
 
 
@@ -692,7 +696,7 @@ void loop()
 	h = hue;
 	settingsServerTask(); // OTA and client handle
 	//webSocket.loop();// handles websockets
-	if (!client.connected()) {
+	if (!mqttClient.connected()) {
 		reconnect();
 	}
 	EVERY_N_SECONDS(5) {
@@ -727,5 +731,5 @@ void loop()
 		setupWiFi();
 		return;
 	}
-	client.loop(); // mqtt client
+	mqttClient.loop(); // mqtt client
 }

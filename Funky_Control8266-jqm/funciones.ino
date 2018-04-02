@@ -1161,8 +1161,8 @@ SAMPLE PAYLOAD:
 
 
 
-/********************************** START CALLBACK*****************************************/
-void callback(char* topic, byte* payload, unsigned int length) {
+/********************************** START mqtt CALLBACK*****************************************/
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
 	Serial.print("Message arrived [");
 	Serial.print(topic);
 	Serial.print("] ");
@@ -1174,29 +1174,55 @@ void callback(char* topic, byte* payload, unsigned int length) {
 	message[length] = '\0';
 	Serial.println(message);
 
-	if (!processJson(message)) {
-		return;
+	char MQTT_CMND_TOPIC[ sizeof(MQTT_MODE_CMND_TOPIC) - 2] = { 0 };
+	// For each Topic 
+	if (String(MQTT_MODE_CMND_TOPIC).equals(topic)) {
+		DynamicJsonBuffer dynamicJsonBuffer;
+		JsonObject& root = dynamicJsonBuffer.parseObject(payload);
+		if (!root.success()) {
+			DEBUG_PRINTLN(F("ERROR: parseObject() failed"));
+			return;
+		}
+			if (root.containsKey("switch")) {
+				myMode = root["switch"];
+				DEBUG_PRINT(F("modo : "));
+				DEBUG_PRINTLN(myMode);
+			}
+			//root["switch"] = (myMode) ? on_cmd : off_cmd;
+			myMode = (root["switch"] == "ON") ? 1:0;
+			char buffer[root.measureLength() + 1];
+			root.printTo(buffer, sizeof(buffer));
+			publishToMQTT(MQTT_MODE_STAT_TOPIC, buffer, true); // sends inmediate feedback for state
+		}
+	else
+	{
+
+
+		if (!processJson(message)) {
+			return;
+		}
+
+		/*if (stateOn) {
+
+			realRed = map(red, 0, 255, 0, brightness);
+			realGreen = map(green, 0, 255, 0, brightness);
+			realBlue = map(blue, 0, 255, 0, brightness);
+		}
+		else {
+
+			realRed = 0;
+			realGreen = 0;
+			realBlue = 0;
+		}*/
+		myOnOff = stateOn;
+
+		Serial.println(effect);
+
+		//startFade = true;
+		//inFade = false; // Kill the current fade
+
+		sendState();
 	}
-
-	/*if (stateOn) {
-
-		realRed = map(red, 0, 255, 0, brightness);
-		realGreen = map(green, 0, 255, 0, brightness);
-		realBlue = map(blue, 0, 255, 0, brightness);
-	}
-	else {
-
-		realRed = 0;
-		realGreen = 0;
-		realBlue = 0;
-	}*/
-
-	Serial.println(effect);
-
-	//startFade = true;
-	//inFade = false; // Kill the current fade
-
-	sendState();
 }
 
 
@@ -1255,6 +1281,7 @@ bool processJson(char* message) {
 
 		if (root.containsKey("transition")) {
 			transitionTime = root["transition"];
+			myparameter1 = transitionTime; // por el momento lo uso como parametro generico
 		}
 		else if (effectString == "solid") {
 			transitionTime = 0;
@@ -1266,7 +1293,10 @@ bool processJson(char* message) {
 	}
 	else { // Not flashing
 		flash = false;
-
+		
+			if (root.containsKey("auto-man")) {
+				myMode = bool(root["auto-man"]);
+			}
 
 		if (root.containsKey("color")) {
 			red = root["color"]["r"];
@@ -1291,7 +1321,7 @@ bool processJson(char* message) {
 			effect = root["effect"];
 			effectString = effect;
 			gCurrentPatternNumber = getposition();
-
+			
 			//twinklecounter = 0; //manage twinklecounter
 		}
 
@@ -1322,32 +1352,65 @@ void sendState() {
 	color["b"] = blue;
 
 	root["brightness"] = myBrightness;
-	root["effect"] = effectString.c_str();
-
+	root["effect"] = gPatternsAndArguments[gCurrentPatternNumber].mName;
+	root["auto-man"] = myMode;
 
 	char buffer[root.measureLength() + 1];
 	root.printTo(buffer, sizeof(buffer));
 
-	client.publish(light_state_topic, buffer, true);
+	//mqttClient.publish(light_state_topic, buffer, true);
+	publishToMQTT(light_state_topic, buffer, true);
 }
 
+/*
+Function called to subscribe to a MQTT topic
+*/
+void subscribeToMQTT(char* p_topic) {
+	if (mqttClient.subscribe(p_topic)) {
+		DEBUG_PRINT(F("INFO: Sending the MQTT subscribe succeeded for topic: "));
+		DEBUG_PRINTLN(p_topic);
+	}
+	else {
+		DEBUG_PRINT(F("ERROR: Sending the MQTT subscribe failed for topic: "));
+		DEBUG_PRINTLN(p_topic);
+	}
+}
+
+/*
+Function called to publish to a MQTT topic with the given payload
+*/
+void publishToMQTT(char* p_topic, char* p_payload, boolean retained) {
+	if (mqttClient.publish(p_topic, p_payload, retained)) {
+		DEBUG_PRINT(F("INFO: MQTT message published successfully, topic: "));
+		DEBUG_PRINT(p_topic);
+		DEBUG_PRINT(F(", payload: "));
+		DEBUG_PRINTLN(p_payload);
+	}
+	else {
+		DEBUG_PRINTLN(F("ERROR: MQTT message not published, either connection lost, or message too large. Topic: "));
+		DEBUG_PRINT(p_topic);
+		DEBUG_PRINT(F(" , payload: "));
+		DEBUG_PRINTLN(p_payload);
+	}
+}
 
 
 /********************************** START RECONNECT*****************************************/
 void reconnect() {
 	// Loop until we're reconnected
-	while (!client.connected()) {
+	while (!mqttClient.connected()) {
 		Serial.print("Attempting MQTT connection...");
 		// Attempt to connect
-		if (client.connect(SENSORNAME, mqtt_username, mqtt_password)) {
+		if (mqttClient.connect(SENSORNAME, mqtt_username, mqtt_password)) {
 			Serial.println("connected");
-			client.subscribe(light_set_topic);
+			subscribeToMQTT(light_set_topic);
+			subscribeToMQTT(MQTT_MODE_CMND_TOPIC);  // para el switch de modo auto man
 			FastLED.clear(1);
 			sendState();
 		}
 		else {
 			Serial.print("failed, rc=");
-			Serial.print(client.state());
+			Serial.print(mqttClient.state());
 			Serial.println(" try again in 5 seconds");
 			// Wait 5 seconds before retrying
 			delay(5000);
