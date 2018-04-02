@@ -112,12 +112,13 @@ const int mqtt_port = 1883;
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient); // cliente mqtt
-
+volatile unsigned long lastMQTTConnection = MQTT_CONNECTION_TIMEOUT;
 
 
 
 
 /************* MQTT TOPICS (change these topics as you wish)  **************************/
+#define MQTT_CONNECTION_TIMEOUT 5000
  char* light_state_topic = "tablero/stat";
  char* light_set_topic = "tablero/cmnd";
 #define MQTT_MODE_CMND_TOPIC "tablero/auto-man/cmnd"
@@ -696,9 +697,7 @@ void loop()
 	h = hue;
 	settingsServerTask(); // OTA and client handle
 	//webSocket.loop();// handles websockets
-	if (!mqttClient.connected()) {
-		reconnect();
-	}
+	connectToMQTT(); // verify client connected and reconnect if needed
 	EVERY_N_SECONDS(5) {
 		sendHeartBeat(); // envia el json de HB} al cliente WEB
 	}

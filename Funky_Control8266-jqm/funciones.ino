@@ -1177,22 +1177,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 	char MQTT_CMND_TOPIC[ sizeof(MQTT_MODE_CMND_TOPIC) - 2] = { 0 };
 	// For each Topic 
 	if (String(MQTT_MODE_CMND_TOPIC).equals(topic)) {
-		DynamicJsonBuffer dynamicJsonBuffer;
-		JsonObject& root = dynamicJsonBuffer.parseObject(payload);
-		if (!root.success()) {
-			DEBUG_PRINTLN(F("ERROR: parseObject() failed"));
-			return;
-		}
-			if (root.containsKey("switch")) {
-				myMode = root["switch"];
-				DEBUG_PRINT(F("modo : "));
-				DEBUG_PRINTLN(myMode);
-			}
-			//root["switch"] = (myMode) ? on_cmd : off_cmd;
-			myMode = (root["switch"] == "ON") ? 1:0;
-			char buffer[root.measureLength() + 1];
-			root.printTo(buffer, sizeof(buffer));
-			publishToMQTT(MQTT_MODE_STAT_TOPIC, buffer, true); // sends inmediate feedback for state
+		sendSwitchState(payload) ;
 		}
 	else
 	{
@@ -1353,7 +1338,6 @@ void sendState() {
 
 	root["brightness"] = myBrightness;
 	root["effect"] = gPatternsAndArguments[gCurrentPatternNumber].mName;
-	root["auto-man"] = myMode;
 
 	char buffer[root.measureLength() + 1];
 	root.printTo(buffer, sizeof(buffer));
@@ -1396,24 +1380,36 @@ void publishToMQTT(char* p_topic, char* p_payload, boolean retained) {
 
 
 /********************************** START RECONNECT*****************************************/
-void reconnect() {
+void connectToMQTT() {
 	// Loop until we're reconnected
-	while (!mqttClient.connected()) {
-		Serial.print("Attempting MQTT connection...");
-		// Attempt to connect
-		if (mqttClient.connect(SENSORNAME, mqtt_username, mqtt_password)) {
-			Serial.println("connected");
-			subscribeToMQTT(light_set_topic);
-			subscribeToMQTT(MQTT_MODE_CMND_TOPIC);  // para el switch de modo auto man
-			FastLED.clear(1);
-			sendState();
+	if (!mqttClient.connected()) {
+		if (lastMQTTConnection + MQTT_CONNECTION_TIMEOUT < millis()) {
+			Serial.print("Attempting MQTT connection...");
+			// Attempt to connect
+			if (mqttClient.connect(SENSORNAME, mqtt_username, mqtt_password, light_state_topic, 0, 1, "dead")) {
+				Serial.println("connected");
+				subscribeToMQTT(light_set_topic);
+				subscribeToMQTT(MQTT_MODE_CMND_TOPIC);  // para el switch de modo auto man
+				FastLED.clear(1);
+				sendState();
+				// podria colocar el codigo para autodiscovery de HASS
+				// https://github.com/mertenats/Open-Home-Automation/blob/master/ha_mqtt_rgbw_light_with_discovery/ha_mqtt_rgbw_light_with_discovery.ino
+			}
+			else {
+				DEBUG_PRINTLN(F("ERROR: The connection to the MQTT broker failed"));
+				Serial.print(mqttClient.state());
+				DEBUG_PRINT(F("INFO: MQTT username: "));
+				DEBUG_PRINTLN(mqtt_username);
+				DEBUG_PRINT(F("INFO: MQTT password: "));
+				DEBUG_PRINTLN(mqtt_password);
+				DEBUG_PRINT(F("INFO: MQTT broker: "));
+				DEBUG_PRINTLN(SENSORNAME);
+				DEBUG_PRINTLN(" try again in few seconds");
+				// Wait 5 seconds before retrying
+		 
+			
 		}
-		else {
-			Serial.print("failed, rc=");
-			Serial.print(mqttClient.state());
-			Serial.println(" try again in 5 seconds");
-			// Wait 5 seconds before retrying
-			delay(5000);
+			lastMQTTConnection = millis();
 		}
 	}
 }
@@ -1429,3 +1425,23 @@ int getposition(void)
 	}
 	return -1;
 };
+
+// sends switch  mqtt  feedback state {"switch": "ON"} or OFF
+void sendSwitchState(byte* payload) {
+	DynamicJsonBuffer dynamicJsonBuffer;
+	JsonObject& root = dynamicJsonBuffer.parseObject(payload);
+	if (!root.success()) {
+		DEBUG_PRINTLN(F("ERROR: parseObject() failed"));
+		return;
+	}
+	if (root.containsKey("switch")) {
+		//root["switch"] = (myMode) ? on_cmd : off_cmd;
+		myMode = (root["switch"] == "ON") ? 1 : 0;
+		char buffer[root.measureLength() + 1];
+		root.printTo(buffer, sizeof(buffer));
+		publishToMQTT(MQTT_MODE_STAT_TOPIC, buffer, true); // sends inmediate feedback for state
+		DEBUG_PRINT(F("modo : "));
+		DEBUG_PRINTLN(myMode);
+	}
+	
+}
