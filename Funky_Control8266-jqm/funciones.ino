@@ -4,24 +4,19 @@
 
 bool stateOn = false;
 int transitionTime = 0;
-byte red = 255;
-byte green = 255;
-byte blue = 255;
+
 byte brightness = 255;
 
 bool flash = false;
 bool startFlash = false;
 int flashLength = 0;
 unsigned long flashStartTime = 0;
-byte flashRed = red;
-byte flashGreen = green;
-byte flashBlue = blue;
+uint8_t flashRed = red;
+uint8_t flashGreen = green;
+uint8_t flashBlue = blue;
 byte flashBrightness = brightness;
 
 // globals end
-
-
-
 
 /*
 -------------------------------------------------------------------
@@ -79,12 +74,11 @@ int XY_Chico(int x, int y) {
 	}
 }
 
-
 // translates from x, y into an index into the LED array and
 // finds the right index for a S shaped matrix
 // para la matriz de height width
 //NOTE: if i use cled class, this conversion is not needed
-// es usado en 
+// es usado en
 uint16_t XY(uint8_t x, uint8_t y) {
 	if (y > HEIGHT) {
 		y = HEIGHT;
@@ -185,9 +179,14 @@ void BresenhamLine(int x0, int y0, int x1, int y1, byte color) {
 	}
 }
 
-// write one pixel with HSV color to coordinates
+// write one pixel with  color, mysaturation, myvalue to coordinates
 void Pixel(int x, int y, byte color) {
-	leds[XY_Chico(x, y)] = CHSV(color, 255, 255);
+	leds[XY_Chico(x, y)] = CHSV(color, mySaturation, myValue);
+}
+
+// write one pixel with hsv color to coordinates
+void PixelHsv(int x, int y, CHSV hsv) {
+	leds[XY_Chico(x, y)] = hsv;
 }
 
 // delete the screenbuffer
@@ -202,7 +201,7 @@ void ClearAll()
 Oscillators and Emitters
 */
 
-// set the speeds (and by that ratios) of the oscillators here
+// set the speeds (and by that ratios) of the oscillators here values  0-15
 void MoveOscillators() {
 	osci[0] = osci[0] + 5;
 	osci[1] = osci[1] + 2;
@@ -222,7 +221,7 @@ void InitMSGEQ7() {
 }
 
 // get the data from the MSGEQ7
-// (still fucking slow...)
+// (still  slow...)
 void ReadAudio() {
 	digitalWrite(MSGEQ7_RESET_PIN, HIGH);
 	digitalWrite(MSGEQ7_RESET_PIN, LOW);
@@ -230,8 +229,9 @@ void ReadAudio() {
 		digitalWrite(MSGEQ7_STROBE_PIN, LOW);
 		delayMicroseconds(30);
 		left[band] = analogRead(AUDIO_LEFT_PIN);
-		right[band] = analogRead(AUDIO_RIGHT_PIN);
 		digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
+		right[band] = left[band]; // only mono for now		
+		update_mqtt_gauges();
 	}
 }
 
@@ -408,7 +408,6 @@ Audio6
 
 // all examples together
 void AutoRun() {
-
 	// all oscillator based:
 	/* Serial.println("dots1");
 	for(int i = 0; i < 300; i++) {Dots1();}
@@ -481,7 +480,6 @@ void SlowMandala() {
 		}
 	}
 }
-
 
 /*
 Caleidoscope1 mirrors from source to A, B and C
@@ -613,8 +611,6 @@ void Scale(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3) {
 	}
 }
 
-
-
 /*
 -------------------------------------------------------------------
 Testcode for mapping the 16*16 calculation buffer to your
@@ -628,21 +624,19 @@ Fx = kMatrixWidth/CUSTOM_WIDTH;
 // describe your matrix layout here:
 // P.S. If you use a 8*8 just remove the */ and /*
 void RenderCustomMatrix() {
-
-	//    resizePixels(leds, int w1, int h1, int w2, int h2) 
-	resizePixels(leds, WIDTH, HEIGHT, CUSTOM_WIDTH, CUSTOM_HEIGHT); // hacer flexible 
+	//    resizePixels(leds, int w1, int h1, int w2, int h2)
+	resizePixels(leds, WIDTH, HEIGHT, CUSTOM_WIDTH, CUSTOM_HEIGHT); // hacer flexible
 
 	// Copy  led colors from leds[src .. src+9] to leds[dest .. dest+9]
 	// memmove( &leds[dest], &leds[src], 10 * sizeof( CRGB) );
 	//memmove8(&leds2[0], &tempLed[0], CUSTOM_NUM_LEDS * sizeof(CRGB)); // eliminado paso directamente a leds2 sin templed
-
 }
 
-//*** Prueba de matriz 
+//*** Prueba de matriz
 void Prueba() {
 	Serial.println(" brigtness ");
 	// while(Serial.available()<=0){ Serial.print('.');
-	// }  // send an ASCII . 
+	// }  // send an ASCII .
 	// LEDS.showColor(CRGB(rawSerial, 0, 0));
 
 	LEDS.showColor(CRGB(0, 255, 0));
@@ -656,22 +650,18 @@ void Prueba() {
 			FastLED.show();
 			fadeToBlackBy(c_leds[0], CUSTOM_NUM_LEDS, 20);
 		}
-
 	}
-
 }
 
 // showFrame ******************************************
 
 void ShowFrame() {
-	// when using a matrix different than 16*16 use 
+	// when using a matrix different than 16*16 use
 	RenderCustomMatrix();
 
 	FastLED.show();
 	LEDS.countFPS();
 	//SendToProcessing(); // envia los datos en serie a processing para visualizarlos
-
-
 }
 
 void fillnoise8() {
@@ -799,7 +789,6 @@ void SetupBlackAndWhiteStripedPalette()
 	currentPalette[4] = CRGB::White;
 	currentPalette[8] = CRGB::White;
 	currentPalette[12] = CRGB::White;
-
 }
 
 // This function sets up a palette of purple and green stripes.
@@ -816,9 +805,8 @@ void SetupPurpleAndGreenPalette()
 		purple, purple, black, black);
 }
 
-
 // This example shows how to set up a static color palette
-// which is stored in PROGMEM (flash), which is almost always more 
+// which is stored in PROGMEM (flash), which is almost always more
 // plentiful than RAM.  A static PROGMEM palette like this
 // takes up 64 bytes of flash.
 const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM =
@@ -842,7 +830,6 @@ const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM =
 	CRGB::Black,
 	CRGB::Black
 };
-
 
 void NoiseExample8() {
 	ChangePalettePeriodically();
@@ -890,7 +877,6 @@ void resizePixels(CRGB* pixels, int w1, int h1, int w2, int h2) {
 	//Serial.print("out ");// debug
 
 	return;
-
 }
 
 void increaseLedMode()//two colors
@@ -899,7 +885,6 @@ void increaseLedMode()//two colors
 		ledMode++ % 10;
 	}
 }
-
 
 void drawLineByAngle(uint8_t x, uint8_t y, uint16_t angle, uint8_t length, CHSV  color)
 {
@@ -930,7 +915,6 @@ void drawLineByAngle(uint8_t xc, uint8_t yc, uint8_t angle, uint8_t start, uint8
 
 	Coordinates point = Coordinates();
 
-
 	point.fromPolar(start + length, angle, xc, yc); // x + ((p_start + p_length)*(1+cos(p_angle))/2);
 													//y1 = y + ((p_start + p_length)*(1+sin(p_angle))/2);
 	uint8_t x1 = point.getX(); // coordenadas punto final
@@ -942,7 +926,6 @@ void drawLineByAngle(uint8_t xc, uint8_t yc, uint8_t angle, uint8_t start, uint8
 		x1,
 		y1, color, 255, 8);
 	//Serial.print("x1: "); Serial.print(x1); Serial.print("y1: "); Serial.println(y1);// debug
-
 }
 
 void DrawWuLine(uint8_t X0, uint8_t Y0, uint8_t X1, uint8_t Y1,
@@ -965,7 +948,6 @@ void DrawWuLine(uint8_t X0, uint8_t Y0, uint8_t X1, uint8_t Y1,
 		XDir1 = 1; XDir2 = 0;//pendiente positiva
 							 //Serial.print("inicial x1 "); Serial.println(X1);// debug
 							 //Serial.print("; inicial y1 "); Serial.println(Y1);// debug
-
 	}
 
 	else {
@@ -978,10 +960,8 @@ void DrawWuLine(uint8_t X0, uint8_t Y0, uint8_t X1, uint8_t Y1,
 
 	DeltaY = Y1 - Y0;
 
-
 	if (DeltaY == 0) {
 		/* Horizontal line */
-
 
 		while (DeltaX-- != 0) {
 			X0 += XDir1 - XDir2;
@@ -1008,7 +988,6 @@ void DrawWuLine(uint8_t X0, uint8_t Y0, uint8_t X1, uint8_t Y1,
 	}
 
 	/* Line is not horizontal, diagonal, or vertical */
-
 
 	ErrorAcc = 0;  /* initialize the line error accumulator to 0 */
 				   /* # of bits by which to shift ErrorAcc to get intensity level */
@@ -1039,7 +1018,6 @@ void DrawWuLine(uint8_t X0, uint8_t Y0, uint8_t X1, uint8_t Y1,
 			DrawPixel(X0, Y0, CHSV(BaseColor.hue, 255, ErrorAcc));
 
 			//Serial.print("pix1 x0 "); Serial.print(X0); Serial.print("; pix1 y0  "); Serial.println(Y0);		// debug
-
 
 			DrawPixel(X0 + XDir1 - XDir2, Y0, CHSV(BaseColor.hue, 255, 255 - ErrorAcc));
 
@@ -1086,10 +1064,7 @@ void DrawWuLine(uint8_t X0, uint8_t Y0, uint8_t X1, uint8_t Y1,
 void DrawPixel(uint8_t X0, uint8_t Y0, CHSV pixel)
 {
 	c_leds(X0, Y0) = pixel;
-
-
 }
-
 
 void circleBeat() {
 	// Use two out-of-sync sine waves
@@ -1102,12 +1077,11 @@ void circleBeat() {
 	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
 }
 
-
 void sendAll()
 {
 	//Serial.print("SendAll : \t");
 	String json = "{";
-	json += "\"messageName\":\"js_pat\"";// 
+	json += "\"messageName\":\"js_pat\"";//
 	json += ",\"currentPattern\":{";
 	json += "\"index\":" + String(gCurrentPatternNumber);
 	json += ",\"name\":\"" + gPatternsAndArguments[gCurrentPatternNumber].mName + "\"}";
@@ -1159,8 +1133,6 @@ SAMPLE PAYLOAD:
 }
 */
 
-
-
 /********************************** START mqtt CALLBACK*****************************************/
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
 	Serial.print("Message arrived [");
@@ -1174,43 +1146,45 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 	message[length] = '\0';
 	Serial.println(message);
 
-	char MQTT_CMND_TOPIC[ sizeof(MQTT_MODE_CMND_TOPIC) - 2] = { 0 };
-	// For each Topic 
+	char MQTT_CMND_TOPIC[sizeof(MQTT_MODE_CMND_TOPIC) - 2] = { 0 };
+	// For each Topic
 	if (String(MQTT_MODE_CMND_TOPIC).equals(topic)) {
-		sendSwitchState(payload) ;
-		}
-	else
-	{
-
-
-		if (!processJson(message)) {
-			return;
-		}
-
-		/*if (stateOn) {
-
-			realRed = map(red, 0, 255, 0, brightness);
-			realGreen = map(green, 0, 255, 0, brightness);
-			realBlue = map(blue, 0, 255, 0, brightness);
-		}
-		else {
-
-			realRed = 0;
-			realGreen = 0;
-			realBlue = 0;
-		}*/
-		myOnOff = stateOn;
-
-		Serial.println(effect);
-
-		//startFade = true;
-		//inFade = false; // Kill the current fade
-
-		sendState();
+		sendSwitchState(payload);
 	}
+	else
+		if (String(MQTT_HSV_CMND_TOPIC).equals(topic)) {
+			sendHsvState(payload);
+		}
+		else
+			if (String(MQTT_OFFSETS_CMND_TOPIC).equals(topic)) {
+				sendOffsetsState(payload);
+			}
+			else
+			{
+				if (!processJson(message)) {
+					return;
+				}
+
+				if (stateOn) {
+					realRed = red;
+					realGreen = green;
+					realBlue = blue;
+				}
+				else {
+					realRed = 0;
+					realGreen = 0;
+					realBlue = 0;
+				}
+				myOnOff = stateOn;
+
+				Serial.println(effect);
+
+				//startFade = true;
+				//inFade = false; // Kill the current fade
+
+				sendState();
+			}
 }
-
-
 
 /********************************** START PROCESS JSON*****************************************/
 bool processJson(char* message) {
@@ -1222,14 +1196,13 @@ bool processJson(char* message) {
 		Serial.println("parseObject() failed");
 		return false;
 	}
-// verify if state= on_cmd if string compare are equal result is =0
+	// verify if state= on_cmd if string compare are equal result is =0
 	if (root.containsKey("state")) {
 		if (strcmp(root["state"], on_cmd) == 0) {
 			stateOn = true;
 		}
 		else if (strcmp(root["state"], off_cmd) == 0) {
 			stateOn = false;
-
 		}
 	}
 
@@ -1272,16 +1245,15 @@ bool processJson(char* message) {
 			transitionTime = 0;
 		}
 
-
 		flash = true;
 		startFlash = true;
 	}
 	else { // Not flashing
 		flash = false;
-		
-			if (root.containsKey("auto-man")) {
-				myMode = bool(root["auto-man"]);
-			}
+
+		if (root.containsKey("auto-man")) {
+			myMode = bool(root["auto-man"]);
+		}
 
 		if (root.containsKey("color")) {
 			red = root["color"]["r"];
@@ -1300,29 +1272,32 @@ bool processJson(char* message) {
 
 		if (root.containsKey("brightness")) {
 			myBrightness = root["brightness"];
+			if (brightness != myBrightness)
+			{
+				FastLED.setBrightness(myBrightness);
+				brightness = myBrightness;
+			};
 		}
 
 		if (root.containsKey("effect")) {
 			effect = root["effect"];
 			effectString = effect;
 			gCurrentPatternNumber = getposition();
-			
+
 			//twinklecounter = 0; //manage twinklecounter
 		}
 
 		if (root.containsKey("transition")) {
 			transitionTime = root["transition"];
+			myparameter1 = transitionTime; // por el momento lo uso como parametro generico
 		}
 		else if (effectString == "solid") {
 			transitionTime = 0;
 		}
-
 	}
 
 	return true;
 }
-
-
 
 /********************************** START SEND STATE*****************************************/
 void sendState() {
@@ -1338,6 +1313,9 @@ void sendState() {
 
 	root["brightness"] = myBrightness;
 	root["effect"] = gPatternsAndArguments[gCurrentPatternNumber].mName;
+	root["color_temp"] = myParameter2;
+	root["white_value"] = myParameter3;
+	root["xy"] = myParameter4;
 
 	char buffer[root.measureLength() + 1];
 	root.printTo(buffer, sizeof(buffer));
@@ -1378,7 +1356,6 @@ void publishToMQTT(char* p_topic, char* p_payload, boolean retained) {
 	}
 }
 
-
 /********************************** START RECONNECT*****************************************/
 void connectToMQTT() {
 	// Loop until we're reconnected
@@ -1390,6 +1367,8 @@ void connectToMQTT() {
 				Serial.println("connected");
 				subscribeToMQTT(light_set_topic);
 				subscribeToMQTT(MQTT_MODE_CMND_TOPIC);  // para el switch de modo auto man
+				subscribeToMQTT(MQTT_HSV_CMND_TOPIC);  // para sliders HSV
+				subscribeToMQTT(MQTT_OFFSETS_CMND_TOPIC);  // para sliders HSV
 				FastLED.clear(1);
 				sendState();
 				// podria colocar el codigo para autodiscovery de HASS
@@ -1406,19 +1385,16 @@ void connectToMQTT() {
 				DEBUG_PRINTLN(SENSORNAME);
 				DEBUG_PRINTLN(" try again in few seconds");
 				// Wait 5 seconds before retrying
-		 
-			
-		}
+			}
 			lastMQTTConnection = millis();
 		}
 	}
 }
 
-
 // returns the array index that matches the string value in mName .
 int getposition(void)
 {
-	for (int i = 0; i <  sizeof(gPatternsAndArguments); i++)
+	for (int i = 0; i < sizeof(gPatternsAndArguments); i++)
 	{
 		if (gPatternsAndArguments[i].mName == effect)
 			return (int)i;
@@ -1443,5 +1419,65 @@ void sendSwitchState(byte* payload) {
 		DEBUG_PRINT(F("modo : "));
 		DEBUG_PRINTLN(myMode);
 	}
-	
+}
+void sendHsvState(byte * payload) {
+	DynamicJsonBuffer dynamicJsonBuffer;
+	JsonObject& root = dynamicJsonBuffer.parseObject(payload);
+	if (!root.success()) {
+		DEBUG_PRINTLN(F("ERROR: parseObject() failed"));
+		return;
+	}
+	if (root.containsKey("hsv")) {
+		// estract values received
+		myHue = root["hsv"]["h"];
+		mySaturation = root["hsv"]["s"];
+		myValue = root["hsv"]["v"];
+		// send state back
+		char buffer[root.measureLength() + 1];
+		root.printTo(buffer, sizeof(buffer));
+		publishToMQTT(MQTT_HSV_STAT_TOPIC, buffer, true); // sends inmediate feedback for state
+		DEBUG_PRINT(F("hsv : "));
+		DEBUG_PRINTLN(myHue); DEBUG_PRINTLN(mySaturation); DEBUG_PRINTLN(myValue);
+	}
+}
+
+void sendOffsetsState(byte * payload) {
+	DynamicJsonBuffer dynamicJsonBuffer;
+	JsonObject& root = dynamicJsonBuffer.parseObject(payload);
+	if (!root.success()) {
+		DEBUG_PRINTLN(F("ERROR: parseObject() failed"));
+		return;
+	}
+	if (root.containsKey("offsets")) {
+		// estract values received
+		for (int i = 0; i < 7; i++) {
+			left_offset[i]= root["offsets"]["off"+String(i)];
+		}
+		
+		// send state back
+		char buffer[root.measureLength() + 1];
+		root.printTo(buffer, sizeof(buffer));
+		publishToMQTT(MQTT_OFFSETS_STAT_TOPIC, buffer, true); // sends inmediate feedback for state
+		DEBUG_PRINT(F("offsets : "));
+		DEBUG_PRINTLN(left_offset[0]);
+	}
+}
+void update_mqtt_gauges() {
+	// publish sound channel to mqtt as tablero/sound/stat
+	// payload "soundCh":{"Ch":0-6,"val":0-255}
+	// solo lo actualizo cada sample_period para no saturar de mensajes
+	if (millis() > sample_millis + sample_period) {
+		sample_millis = millis();
+		StaticJsonBuffer<100> jsonBuffer;
+		JsonObject& msg = jsonBuffer.createObject(); // msg ->root
+		// Step 2: Build object tree in memory
+		JsonArray& sound = msg.createNestedArray("sound");
+		for (byte i = 0; i < 3; i++) {
+			sound.add(left[i]);
+		};
+		//
+		char buffer[100];
+		msg.printTo(buffer, sizeof(buffer));
+		publishToMQTT(MQTT_SOUND_STAT_TOPIC, buffer, false); // sends inmediate feedback for state
+	}
 }

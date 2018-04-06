@@ -41,12 +41,16 @@ void video(byte nada1 , byte nada2) {
 	FastLED.show(); // display this frame
 }
 void one_color_allHSV(byte ahue, byte abright) {                // SET ALL LEDS TO ONE COLOR (HSV)
-	ahue = myHue;
-	abright = myBrightness;
-	fill_solid(c_leds[0], CUSTOM_NUM_LEDS /*number of leds*/, CHSV(myHue, mySaturation, myValue));
-  
-	FastLED.show();
+	//ahue = myHue;
+	//abright = myBrightness;
+	//FastLED.clear();
+	//CHSV pp = rgb2hsv_approximate(CRGB(red, green, blue));
+	//fill_solid(c_leds[0], CUSTOM_NUM_LEDS /*number of leds*/, CHSV(ahue, mySaturation, abright));
+	//fill_solid(c_leds[0], CUSTOM_NUM_LEDS /*number of leds*/,CRGB(realRed,realGreen,realBlue));
+	FastLED.showColor( CRGB(realRed, realGreen, realBlue));
+	//FastLED.show();
 }
+
 
 void ripple() {
   static unsigned long rippleTick = millis();
@@ -489,8 +493,11 @@ void LedsNoise (byte nada,byte nada1)
 void Dots1(uint8_t color1, uint8_t color2) {
 	MoveOscillators();
 	//2 lissajous dots red
-	leds[XY(p[0], p[1])] = CHSV(color1, 255, 255);
-	leds[XY(p[2], p[3])] = CHSV(color2, 255, 150);
+	byte c1 = color1;
+	byte c2 = color2;
+	if (myparameter1 > 2) { c1 = myparameter1; c2 = 255 - c1; }
+	leds[XY(p[0], p[1])] = CHSV(c1, 255, 255);
+	leds[XY(p[2], p[3])] = CHSV(c2, 255, 150);
 	//average of the coordinates in yellow
 	Pixel((p[2] + p[0]) / 2, (p[1] + p[3]) / 2, 50);
 	ShowFrame();
@@ -514,7 +521,7 @@ void SlowMandala2(byte dim, byte nada) {
 	for (int i = 1; i < 8; i++) {
 		for (int j = 0; j < 16; j++) {
 			MoveOscillators();
-			Pixel(j, i, (osci[0] + osci[1]) / 2);
+			Pixel(j, i, (osci[0] + osci[1])/2); // max (15+15)*8
 			SpiralStream(4, 4, 4, dim); // antes dim
 			Caleidoscope2();
 			ShowFrame();
@@ -528,8 +535,8 @@ void SlowMandala3(byte dim, byte nada) {
 	for (int i = 0; i < 16; i++) {
 		for (int j = 0; j < 16; j++) {
 			MoveOscillators();
-			Pixel(j, j, (osci[0] + osci[1]) / 2);
-			SpiralStream(4, 4, 4, myparameter1);//antes dim
+			Pixel(j, j, (osci[0] + osci[1])/2);
+			SpiralStream(4, 4, 4, dim);//antes myparameter1
 			Caleidoscope2();
 			ShowFrame();
 			FastLED.delay(20);
@@ -564,17 +571,17 @@ void MSGEQtest(byte scale, byte nada) {
 // 2 frequencies linked to dot emitters in a spiral mandala
 void MSGEQtest2(byte scale, byte color) {
 	ReadAudio();
-	if (left[0]>500) {
-		Pixel(0, 0, 1);
-		Pixel(1, 1, 1);
+	if (left[0]>left_offset[0]) {
+		PixelHsv(0, 0, CHSV(myparameter1,mySaturation,left[1])); // color 1
+		PixelHsv(1, 1, CHSV(myparameter1, mySaturation, left[1])); // color 1 
 	}
-	if (left[2]>200) {
-		Pixel(2, 2, 100);
+	if (left[2]>left_offset[2]) {
+		PixelHsv(2, 2, CHSV(myHue, mySaturation, left[2]));// color 100 , mysaturation used as color
 	}
-	if (left[6]>200) {
-		Pixel(5, 0, color);
+	if (left[6]>left_offset[6]) {
+		PixelHsv(5, 0, CHSV(myHue, mySaturation, left[6])); // color color, myvalue used as color
 	}
-	SpiralStream(4, 4, 4, scale);
+	SpiralStream(4, 4, 4, myValue);
 	Caleidoscope1();
 	ShowFrame();
 }
@@ -638,6 +645,17 @@ void MSGEQtest6(byte dim, byte hmult) {
 	ShowFrame();
 	VerticalStream(dim);
 }
+
+void offsets_test(byte dim, byte hmult) {
+
+	for (int i = 0; i < 7; i++) {
+		BresenhamLine(2 * i, 16 - left_offset[i] / 64, 2 * i, 15, i*hmult);
+		BresenhamLine(1 + 2 * i, 16 - left_offset[i] / 64, 1 + 2 * i, 15, i*hmult);
+	}
+	ShowFrame();
+	VerticalStream(dim);
+}
+
 
 // geile Schei?e
 // spectrum mandala, color linked to 160Hz band
@@ -763,7 +781,7 @@ void CaleidoTest2(byte dim, byte color_ofset) {
 	MoveOscillators();
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		BresenhamLine(i, left[i] / 200, i, 0, (left[i] / 16) + color_ofset);
+		BresenhamLine(i, left[i] / 200, i, 0, ((left[i] / 16) + myparameter1)%255); // antes color_offset
 	}
 	MirrorTriangle();
 	Caleidoscope1();  //mirror + rotate

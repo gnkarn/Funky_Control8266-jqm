@@ -131,6 +131,17 @@ const char* effect = "Dots1,";
 String effectString = "Dots1,";
 String oldeffectString = "Dots1,";
 
+#define MQTT_HSV_CMND_TOPIC "tablero/hsv/cmnd" // payload {"h":byte,"s":byte,"v":byte}
+#define MQTT_HSV_STAT_TOPIC "tablero/hsv/stat"
+#define MQTT_SOUND_STAT_TOPIC "tablero/sound/stat"
+#define MQTT_OFFSETS_CMND_TOPIC "tablero/offsets/cmnd"
+#define MQTT_OFFSETS_STAT_TOPIC "tablero/offsets/stat"
+// for sound mqtt update frecuency
+
+unsigned long sample_millis=0;
+unsigned long sample_period = 200;
+
+int left_offset[7] = { 20 };
 /****************************************FOR JSON***************************************/
 // Step 1: DEfinir Json buffer :Reserve memory space
 const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
@@ -256,12 +267,18 @@ byte myValue = 255;
 String  myrgb = "(0,0,0)";            // color desde websockets color picker
 unsigned int myparameter1 = 0;			// usef for speed change on noise effect as a global var
 byte rainbowHue = myHue;            //Using this so the rainbow effect doesn't overwrite the hue set on the website
-byte	myBrightness = BRIGHTNESS; // global brightness changable from screen
-
+byte myBrightness = BRIGHTNESS; // global brightness changable from screen
+byte myParameter2, myParameter3, myParameter4 = 100;
 int flickerTime = random(200, 400);
 int flickerLed;
 int flickerValue = 110 + random(-3, +3); //70 works nice, too
 int flickerHue = 33;
+uint8_t red = 255; // received by mqtt from HASS for solid color effect
+uint8_t green = 255;
+uint8_t blue = 255;
+uint8_t realRed = 255; // received by mqtt from HASS for solid color effect
+uint8_t realGreen = 255;
+uint8_t realBlue = 255;
 
 bool eepromCommitted = true;
 
@@ -496,10 +513,10 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ circulo1		,"Circulo1",	0/* nada*/		,0	 /* nada1*/ },
 	{ anillos		,"anillos",	0/* nada*/		,0	 /* nada1*/ },
 	{ HorizontalStripes		,"HorizontalStripes",	0/* nada*/		,0	 /* nada1*/ },
-	{ diagonalFill		,"diagonalFill",	0/* nada*/		,0	 /* nada1*/ },
+	{ diagonalFill	,"diagonalFill",	0/* nada*/		,0	 /* nada1*/ },
 	{ HorMirror		,"HorMirror",	0/* nada*/		,0	 /* nada1*/ },
-	{ VertMirror		,"VertMirror",	0/* nada*/		,0	 /* nada1*/ },
-	{ QuadMirror		,"QuadMirror",	0/* nada*/		,0	 /* nada1*/ },
+	{ VertMirror	,"VertMirror",	0/* nada*/		,0	 /* nada1*/ },
+	{ QuadMirror	,"QuadMirror",	0/* nada*/		,0	 /* nada1*/ },
 	{ circulo2		,"circulo2",	0/* nada*/		,0	 /* nada1*/ },
 	{ MSGEQtest		,"MSGEQtest",	120 /* scale*/	, 0 /*no se usa*/ },
 	{ MSGEQtest2	,"MSGEQtest2",	127 /*scale*/	, 200 /*color*/ },
@@ -520,7 +537,8 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ Audio5		,"Audio5",		9 /*dim*/		,30 /* hmult*/ },
 	{ Audio6		,"Audio6",		200 /*dim*/		,10 /* hmult*/ },
 	{ one_color_allHSV ,"one_color_allHSV",	41/* h*/		,180	 /* b*/ },
-	{ video				,"video"	,0 /* nada1*/		,0 /* nada2 */ }
+	{ video			,"video"	,0 /* nada1*/		,0 /* nada2 */ },
+	{ offsets_test ,"offsets_test", 240 /*dim*/		, 10 /*hmult*/ }
 
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 };
@@ -648,7 +666,7 @@ void setup() {
 	delay(200);
 
 	drawEstrella(10, 12, 2, 0, 10, CHSV(HUE_RED, 255, 255));
-	blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
+	//blur2d((c_leds[0]), MATRIX_WIDTH, MATRIX_HEIGHT, 32);
 
 	delay(2000);
 	FastLED.clear(true);
