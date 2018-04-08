@@ -141,7 +141,7 @@ String oldeffectString = "Dots1,";
 unsigned long sample_millis=0;
 unsigned long sample_period = 200;
 
-int left_offset[7] = { 20 };
+int left_offset[7] = { 40,110,140,180,310,650,800 };
 /****************************************FOR JSON***************************************/
 // Step 1: DEfinir Json buffer :Reserve memory space
 const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
@@ -265,7 +265,7 @@ byte myHue = 33;                    //I am using HSV, the initial settings displ
 byte mySaturation = 168;
 byte myValue = 255;
 String  myrgb = "(0,0,0)";            // color desde websockets color picker
-unsigned int myparameter1 = 0;			// usef for speed change on noise effect as a global var
+unsigned int myparameter1 = 100;			// usef for speed change on noise effect as a global var
 byte rainbowHue = myHue;            //Using this so the rainbow effect doesn't overwrite the hue set on the website
 byte myBrightness = BRIGHTNESS; // global brightness changable from screen
 byte myParameter2, myParameter3, myParameter4 = 100;
@@ -522,10 +522,10 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ MSGEQtest2	,"MSGEQtest2",	127 /*scale*/	, 200 /*color*/ },
 	{ MSGEQtest3	,"MSGEQtest3",	120 /*scale*/	, 100 /*color*/ },
 	{ MSGEQtest4	,"MSGEQtest4",	240 /* dim*/	, 10 /* hmult*/ },
-	{ AudioSpiral	,"AudioSpiral",	130 /*color1*/	, 122 /*color*/ },
-	{ MSGEQtest5	,"MSGEQtest5",	120 /*dim*/		, 10 /*hmult*/ },
-	{ MSGEQtest6	,"MSGEQtest6",	170 /*dim*/		, 10 /*hmult*/ },
-	{ MSGEQtest7	,"MSGEQtest7",	240 /*dim*/		, 10 /*hmult*/ },// revisar
+	{ AudioSpiral	,"AudioSpiral",	160 /*dim1*/	, 110 /*dim2*/ },
+	{ MSGEQtest5	,"MSGEQtest5",	120 /*dim*/		, 40 /*hmult*/ },
+	{ MSGEQtest6	,"MSGEQtest6",	190 /*dim*/		, 40 /*hmult*/ },
+	{ MSGEQtest7	,"MSGEQtest7",	240 /*dim*/		, 30 /*hmult*/ },// revisar
 	{ MSGEQtest8	,"MSGEQtest8",	240 /*dim*/		, 10 /*hmult*/ },// revisar
 	{ MSGEQtest9	,"MSGEQtest9",	27 /*dim*/		, 255 /*s*/ },
 	{ CopyTest		,"CopyTest",	200 /* dim*/	, 10 /*hmult*/ },

@@ -613,12 +613,15 @@ void MSGEQtest4(byte dim, byte hmult) {
 // basedrum/snare linked to red/green emitters
 void AudioSpiral(byte color1, byte color2) {
 	MoveOscillators();
-	SpiralStream(7, 7, 7, color1);
-	SpiralStream(4, 4, 4, color2);
-	SpiralStream(11, 11, 3, color2);
+	myParameter2 = color1*(myMode)+!(myMode)*left_offset[5];
+	myParameter3 = color2*(myMode)+!(myMode)*left_offset[6];
+	SpiralStream(7, 7, 7, myParameter2 );// color1 160
+	SpiralStream(4, 4, 4, myHue);
+	SpiralStream(11, 11, 3,myParameter3);// color2 110
 	ReadAudio();
-	if (left[1] > 500) { leds[4, 2] = CHSV(1, 255, 255); }
-	if (left[4] > 500) { leds[XY(random(15), random(15))] = CHSV(100, 255, 255); }
+	int soundHue = map(left[3], 0, 1023, 0, 255);
+	if (left[1] > left_offset[1]) { leds[4, 2] = CHSV(myHue, 255, 255); }
+	if (left[4] > left_offset[4]) { leds[XY(random(15), random(15))] = CHSV(soundHue, 255, 255); } // antes hue variava con realRed ( color picker de light)
 
 	ShowFrame();
 	DimAll(250);
@@ -628,22 +631,24 @@ void AudioSpiral(byte color1, byte color2) {
 void MSGEQtest5(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		BresenhamLine(2 * i, 16 - left[i] / 64, 2 * i, 15, i*hmult);
-		BresenhamLine(1 + 2 * i, 16 - left[i] / 64, 1 + 2 * i, 15, i*hmult);
+		BresenhamLine(2 * i, 16 - left[i]*(left[i]>left_offset[i]) / 64, 2 * i, 15, i*hmult); // hmult
+		BresenhamLine(1 + 2 * i, 16 - left[i] * (left[i]>left_offset[i]) / 64, 1 + 2 * i, 15, i*hmult); // hmult
 	}
 	ShowFrame();
-	SpiralStream(7, 7, 7, dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myValue; // 124
+	SpiralStream(7, 7, 7, myParameter2); // dim 120
 }
 
 // classic analyzer, slow falldown
 void MSGEQtest6(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		BresenhamLine(2 * i, 16 - left[i] / 64, 2 * i, 15, i*hmult);
-		BresenhamLine(1 + 2 * i, 16 - left[i] / 64, 1 + 2 * i, 15, i*hmult);
+		BresenhamLine(2 * i, 16 - left[i] * (left[i]>left_offset[i]) / 64, 2 * i, 15, i*hmult);
+		BresenhamLine(1 + 2 * i, 16 - left[i] * (left[i]>left_offset[i]) / 64, 1 + 2 * i, 15, i*hmult);
 	}
 	ShowFrame();
-	VerticalStream(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myValue; // 124
+	VerticalStream(myParameter2); //dim 193
 }
 
 void offsets_test(byte dim, byte hmult) {
@@ -663,12 +668,13 @@ void MSGEQtest7(byte dim, byte hmult) {
 	MoveOscillators();
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		Pixel(7 - i, 8 - right[i] / 128, i*hmult + right[1] / 8);
+		PixelHsv(7 - i, 8 - left[i] * (left[i]>left_offset[i]) / 128,CHSV( i*hmult + left[1] * (left[1]>left_offset[1]) / 8,mySaturation,myValue+left[2]));
 	}
 	Caleidoscope5();
 	Caleidoscope1();
 	ShowFrame();
-	DimAll(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; // 200
+	DimAll(myParameter2);
 }
 
 // spectrum mandala, color linked to osci
