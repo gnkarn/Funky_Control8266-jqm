@@ -98,8 +98,17 @@ TODO:
 
 #include <PubSubClient.h> //ok
 
-#define DEBUG_PRINT Serial.print
-#define DEBUG_PRINTLN Serial.println
+// #define DEBUG_ESP_PORT Serial
+#ifdef DEBUG_ESP_PORT
+#define DEBUG_PRINT(...) Serial.print( __VA_ARGS__ )
+#define DEBUG_PRINTLN(...) Serial.println( __VA_ARGS__ )
+#else
+#define DEBUG_PRINT(...)
+#define DEBUG_PRINTLN(...)
+#endif
+
+//#define DEBUG_PRINT Serial.print
+//#define DEBUG_PRINTLN Serial.println
 
 
 /************ WIFI and MQTT Information (CHANGE THESE FOR YOUR SETUP) ******************/
@@ -139,7 +148,7 @@ String oldeffectString = "Dots1,";
 // for sound mqtt update frecuency
 
 unsigned long sample_millis=0;
-unsigned long sample_period = 200;
+unsigned long sample_period = 250;
 
 int left_offset[7] = { 40,110,140,180,310,650,800 };
 /****************************************FOR JSON***************************************/
@@ -151,7 +160,7 @@ const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 
 // json setup ofr the Video matrix json object
 //sized using  https://bblanchon.github.io/ArduinoJson/assistant/index.html
-#define SENSORDATA_JSON_SIZE (JSON_ARRAY_SIZE(480) + 2 * JSON_OBJECT_SIZE(0) + 479 * JSON_OBJECT_SIZE(3) + 8740)
+//#define SENSORDATA_JSON_SIZE (JSON_ARRAY_SIZE(480) + 2 * JSON_OBJECT_SIZE(0) + 479 * JSON_OBJECT_SIZE(3) + 8740)
 
 int  ledState = LOW;
 
@@ -512,7 +521,7 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ NoiseExample7	,"NoiseExample7",	0/*nada*/		,100 /* scale*/ },
 	{ circulo1		,"Circulo1",	0/* nada*/		,0	 /* nada1*/ },
 	{ anillos		,"anillos",	0/* nada*/		,0	 /* nada1*/ },
-	{ HorizontalStripes		,"HorizontalStripes",	0/* nada*/		,0	 /* nada1*/ },
+	{ HorizontalStripes	,"HorizontalStripes",	0/* nada*/		,0	 /* nada1*/ },
 	{ diagonalFill	,"diagonalFill",	0/* nada*/		,0	 /* nada1*/ },
 	{ HorMirror		,"HorMirror",	0/* nada*/		,0	 /* nada1*/ },
 	{ VertMirror	,"VertMirror",	0/* nada*/		,0	 /* nada1*/ },
@@ -526,11 +535,11 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ MSGEQtest5	,"MSGEQtest5",	120 /*dim*/		, 40 /*hmult*/ },
 	{ MSGEQtest6	,"MSGEQtest6",	190 /*dim*/		, 40 /*hmult*/ },
 	{ MSGEQtest7	,"MSGEQtest7",	240 /*dim*/		, 30 /*hmult*/ },// revisar
-	{ MSGEQtest8	,"MSGEQtest8",	240 /*dim*/		, 10 /*hmult*/ },// revisar
+	{ MSGEQtest8	,"MSGEQtest8",	200 /*dim*/		, 20 /*hmult*/ },// revisar
 	{ MSGEQtest9	,"MSGEQtest9",	27 /*dim*/		, 255 /*s*/ },
 	{ CopyTest		,"CopyTest",	200 /* dim*/	, 10 /*hmult*/ },
 	{ CopyTest2		,"CopyTest2",	200 /* dim*/	, 10 /*hmult*/ },
-	{ Audio1		,"Audio1",		10 /*dim*/		,15 /*hmult*/ },
+	{ Audio1		,"Audio1",		10 /*dim*/		,15 /*hmult*/ }, // hmult antes 15
 	{ Audio2		,"Audio2",		120 /*dim*/		,15 /*hmult*/ },
 	{ Audio3		,"Audio3",		255 /*dim*/		,27 /*hmult*/ },
 	{ Audio4		,"Audio4",		12 /*dim*/		,32 /*hdiv*/ },

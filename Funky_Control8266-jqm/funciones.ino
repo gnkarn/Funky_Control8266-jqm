@@ -179,6 +179,29 @@ void BresenhamLine(int x0, int y0, int x1, int y1, byte color) {
 	}
 }
 
+
+//*************************************************
+// Bresenham line algorythm based on 2 coordinates
+void BresenhamLineHsv(int x0, int y0, int x1, int y1, CHSV color) {
+	int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+	int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+	int err = dx + dy, e2;
+	for (;;) {
+		leds[XY_Chico(x0, y0)] = color;
+		if (x0 == x1 && y0 == y1) break;
+		e2 = 2 * err;
+		if (e2 > dy) {
+			err += dy;
+			x0 += sx;
+		}
+		if (e2 < dx) {
+			err += dx;
+			y0 += sy;
+		}
+	}
+}
+
+
 // write one pixel with  color, mysaturation, myvalue to coordinates
 void Pixel(int x, int y, byte color) {
 	leds[XY_Chico(x, y)] = CHSV(color, mySaturation, myValue);
@@ -231,7 +254,7 @@ void ReadAudio() {
 		left[band] = analogRead(AUDIO_LEFT_PIN);
 		digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
 		right[band] = left[band]; // only mono for now		
-		update_mqtt_gauges();
+		//update_mqtt_gauges();  // ver si es el mejor lugar ?
 	}
 }
 
@@ -1468,16 +1491,24 @@ void update_mqtt_gauges() {
 	// solo lo actualizo cada sample_period para no saturar de mensajes
 	if (millis() > sample_millis + sample_period) {
 		sample_millis = millis();
-		StaticJsonBuffer<100> jsonBuffer;
+		StaticJsonBuffer<144> jsonBuffer;
 		JsonObject& msg = jsonBuffer.createObject(); // msg ->root
 		// Step 2: Build object tree in memory
 		JsonArray& sound = msg.createNestedArray("sound");
-		for (byte i = 0; i < 3; i++) {
+		for (byte i = 0; i < 7; i++) {  // solo envio un valor por tema de performance , ver como mejorar
 			sound.add(left[i]);
 		};
 		//
-		char buffer[100];
+		char buffer[sizeof(msg)];
 		msg.printTo(buffer, sizeof(buffer));
 		publishToMQTT(MQTT_SOUND_STAT_TOPIC, buffer, false); // sends inmediate feedback for state
 	}
+}
+
+// enables sound channel above an offset value
+// offset values are tunable from home assistant
+int  soundOffset(byte ch) {  // return sound if value is > channel offset
+	//return left[ch] * (left[ch] > left_offset[ch]);
+	left[ch] = (left[ch] < left_offset[ch]) ? 0 : left[ch];
+	return left[ch];
 }

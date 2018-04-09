@@ -513,7 +513,9 @@ void Dots2(uint8_t scale, uint8_t nada) {
 	Pixel((p[2] + p[0] + p[1]) / 3, (p[1] + p[3] + p[2]) / 3, osci[3]);
 	ShowFrame();
 	FastLED.delay(20);
-	HorizontalStream(myparameter1); // anstes scale
+	myParameter2 = scale*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
+	HorizontalStream(myParameter2); // anstes scale
 }
 
 // beautifull but periodic
@@ -558,11 +560,11 @@ void Mandala8(byte dim, byte nada) {
 // colorfull 2 chanel 7 band analyzer
 void MSGEQtest(byte scale, byte nada) {
 	ReadAudio();
+	int s = 0;
 	for (int i = 0; i < 7; i++) {
-		Pixel(i, 16 - left[i] / 64, left[i] / 4);
-	}
-	for (int i = 0; i < 7; i++) {
-		Pixel(8 + i, 16 - right[i] / 64, right[i] / 4);
+		 s = soundOffset(i);
+		Pixel(i, 16 - s/ 64,s / 4); //left
+		Pixel(8 + i, 16 - s / 64, s / 4);// right
 	}
 	ShowFrame();
 	VerticalStream(scale);
@@ -668,7 +670,7 @@ void MSGEQtest7(byte dim, byte hmult) {
 	MoveOscillators();
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		PixelHsv(7 - i, 8 - left[i] * (left[i]>left_offset[i]) / 128,CHSV( i*hmult + left[1] * (left[1]>left_offset[1]) / 8,mySaturation,myValue+left[2]));
+		PixelHsv(7 - i, 8 - soundOffset(i) / 128,CHSV( i*hmult + soundOffset(1) / 8,mySaturation,myValue+ soundOffset(2)));
 	}
 	Caleidoscope5();
 	Caleidoscope1();
@@ -682,20 +684,22 @@ void MSGEQtest8(byte dim, byte hmult) {
 	MoveOscillators();
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		Pixel(7 - i, 8 - right[i] / 128, i*hmult + osci[1]);
+		PixelHsv(7 - i, 8 - soundOffset(i) / 128,CHSV( i*hmult + osci[1],mySaturation,myValue+ soundOffset(2)));
 	}
 	Caleidoscope5();
 	Caleidoscope2();
 	ShowFrame();
-	DimAll(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
 }
 
 // falling spectogram
 void MSGEQtest9(byte hmult, byte s) {
 	ReadAudio();
+	myParameter2 = s*(myMode)+!(myMode)*mySaturation; //
 	for (int i = 0; i < 7; i++) {
-		leds[XY(i * 2, 0)] = CHSV(i*hmult, s, right[i] / 3); // brightness should be divided by 4
-		leds[XY(1 + i * 2, 0)] = CHSV(i*hmult, s, left[i] / 3);
+		leds[XY(i * 2, 0)] = CHSV(i*hmult, s, soundOffset(i) / 3); // brightness should be divided by 4
+		leds[XY(1 + i * 2, 0)] = CHSV(i*hmult, myParameter2, soundOffset(i) / 3);
 	}
 	leds[XY(14, 0)] = 0;
 	leds[XY(15, 0)] = 0;
@@ -707,14 +711,18 @@ void MSGEQtest9(byte hmult, byte s) {
 void CopyTest(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		BresenhamLine(i, 4 - left[i] / 256, i, 4, i*hmult);
+		//int hue = i*hmult;
+		int hue = (soundOffset(i) + soundOffset(6-i)) / 4 + myHue;
+		CHSV color = CHSV( i*hue,mySaturation,hue);
+		BresenhamLineHsv(i, 4 - soundOffset(i)/ 256, i, 4,color);
 	}
 	Copy(0, 0, 4, 4, 5, 0);
 	Copy(0, 0, 4, 4, 10, 0);
 	Copy(0, 0, 14, 4, 0, 5);
 	Copy(0, 0, 14, 4, 0, 10);
 	ShowFrame();
-	DimAll(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
 }
 
 // test scale
@@ -722,11 +730,15 @@ void CopyTest(byte dim, byte hmult) {
 void CopyTest2(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		BresenhamLine(i * 2, 4 - left[i] / 128, i * 2, 4, i*hmult);
+		myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+		myParameter3 = hmult*i*(myMode);
+		myParameter3 += !(myMode)*myHue; //
+		CHSV color = CHSV(i*myParameter3, mySaturation, soundOffset(i));
+		BresenhamLineHsv(i * 2, 4 - soundOffset(i) / 128, i * 2, 4,color);
 	}
 	Scale(0, 0, 4, 4, 7, 7, 15, 15);
 	ShowFrame();
-	DimAll(dim);
+	DimAll(myParameter2);
 
 }
 
@@ -734,11 +746,16 @@ void CopyTest2(byte dim, byte hmult) {
 void Audio1(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		BresenhamLine(3 * i, 16 - left[i] / 64, 3 * (i + 1), 16 - left[i + 1] / 64, 255 - i*hmult);
+		//left[i]= (left[i] < left_offset[i]) ? 0 : left[i];
+		int s1 = left[i] / 64;// map(left[i], 0, 1023, 0, 16);
+		//left[i+1] = (left[i+1] < left_offset[i+1]) ? 0 : left[i+1];
+		int s2 = left[i + 1] / 64;// map(left[i + 1], 0, 1023, 0, 16);
+		BresenhamLine(3 * i, 16 -s1, 3 * (i + 1), 16 -s2, myHue + i*hmult);
 	}
 	Caleidoscope4();
 	ShowFrame();
-	DimAll(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
 }
 
 // line analyzer with stream
@@ -1092,7 +1109,6 @@ void nextPattern()
 	sendAll(); // lo pongo aqui , pero en realidad deberia ser solo cuando hay un cambio de efecto
 
 }
-
 
 
 
