@@ -686,7 +686,7 @@ void ShowFrame() {
 	LEDS.countFPS();
 	//SendToProcessing(); // envia los datos en serie a processing para visualizarlos
 }
-
+// use scale parameter
 void fillnoise8() {
 	for (int i = 0; i < MAX_DIMENSION; i++) {
 		int ioffset = scale * i;
@@ -696,9 +696,9 @@ void fillnoise8() {
 		}
 	}
 	y += speed;
-	//z += 2;
+	z += 2;
 }
-
+// use scale2 parameter
 void fillnoise82() {
 	for (int i = 0; i < MAX_DIMENSION; i++) {
 		int ioffset = scale2 * i;
@@ -708,7 +708,7 @@ void fillnoise82() {
 		}
 	}
 	y2 += speed * 3;
-	//z += 2;
+	z += 2;
 }
 
 void FillNoise(uint16_t x, uint16_t y, uint16_t z, uint16_t scale) {
@@ -1257,6 +1257,7 @@ bool processJson(char* message) {
 			effect = root["effect"];
 			effectString = effect;
 			gCurrentPatternNumber = getposition();
+			gCurrentPatternNumber = (gCurrentPatternNumber < 0) ? 0 : gCurrentPatternNumber; // error animacion no encontrada en la lista
 			//twinklecounter = 0; //manage twinklecounter
 		}
 
@@ -1306,7 +1307,7 @@ bool processJson(char* message) {
 			effect = root["effect"];
 			effectString = effect;
 			gCurrentPatternNumber = getposition();
-
+			gCurrentPatternNumber = (gCurrentPatternNumber < 0) ? 0 : gCurrentPatternNumber; // error animacion no encontrada en la lista
 			//twinklecounter = 0; //manage twinklecounter
 		}
 
@@ -1505,10 +1506,14 @@ void update_mqtt_gauges() {
 	}
 }
 
-// enables sound channel above an offset value
+// enables sound channel above an offset value , sound values are 0-1023
 // offset values are tunable from home assistant
 int  soundOffset(byte ch) {  // return sound if value is > channel offset
 	//return left[ch] * (left[ch] > left_offset[ch]);
 	left[ch] = (left[ch] < left_offset[ch]) ? 0 : left[ch];
 	return left[ch];
+}
+
+int soundAverage() {
+	return (soundOffset(0) + soundOffset(2) + soundOffset(3) + soundOffset(1) + soundOffset(4) + soundOffset(5) + soundOffset(6)) / 20;
 }

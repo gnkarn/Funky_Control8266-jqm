@@ -195,7 +195,7 @@ const bool    kMatrixSerpentineLayout = true;
 
 // set master brightness 0-255 here to adjust power consumption
 // and light intensity
-#define BRIGHTNESS  250
+#define BRIGHTNESS 125
 
 // enter your custom matrix size if it is NOT a 16*16 and
 // check in that case the setup part and
@@ -391,18 +391,15 @@ public:
 	{
 		// check to see if it's time to change the state of the LED
 		unsigned long currentMillis = millis();
-
 		if (currentMillis - mpreviousMillis >= mupdatet)
 		{
 			Coordinates cpoint = Coordinates();
-
 			cpoint.fromPolar(mcrad, mcphi, mcxc, mcyc); // x + ((p_start + p_length)*(1+cos(p_angle))/2);
 														//y1 = y + ((p_start + p_length)*(1+sin(p_angle))/2);
 			uint8_t x1 = cpoint.getX(); // coordenadas punto
 			uint8_t y1 = cpoint.getY();
 			c_leds(x1, y1) = mccolor;
 			//Serial.println(  x1, y1);
-
 			mpreviousMillis = currentMillis;  // Remember the time
 			mcphi = mcphi + 1 * (mcdir)-1 * (!mcdir); // incrementa en la direccion indicada
 			FastLED.show();
@@ -419,12 +416,10 @@ private:
 	uint8_t mcx, mcy;// pixel coordinates
 	bool  mcstatus;// 0 detenido , 1 activo
 	CHSV mccolor;
-
 public:
 	// cxc,cyc,crpm,crev,crad,ccolor,cdir : center coords, rpm, num of revs, radious , color ,dir
 	// Constructor - creates a Circulo
 	// and initializes the member variables and state
-
 	CircleBeat(uint8_t cxc, uint8_t cyc, uint16_t cbpm, uint8_t crad, CHSV ccolor, bool cbstatus, bool cdir)
 	{
 		mcxc = cxc;
@@ -436,7 +431,6 @@ public:
 		mpreviousMillis = 0;  	// will store last time LED was updated
 		mcstatus = cbstatus = 0;
 	}
-
 	uint8_t getrad() { return mcrad; };
 	uint8_t getbpm() { return mcbpm; };
 	uint8_t getxc() { return mcxc; };
@@ -446,12 +440,10 @@ public:
 	void setyc(uint8_t cyc) { mcyc = cyc; };
 	void  setColor(CHSV ccolor) { mccolor = ccolor; };
 	void setdir(bool cdir) { mcdir = cdir; };
-
 	void Start() { mcstatus = 1; };
 	void ChangeStatus() { mcstatus = !mcstatus; };
 	void Stop() { mcstatus = 0; };
 	void ChgDir() { mcdir = !mcdir; }
-
 	void Update()
 	{
 		// check to see if it's time to change the state of the LED
@@ -462,11 +454,9 @@ public:
 			// Use two out-of-sync sine waves
 			//incorporar centro y radio para ubicarlo en cualquier posicion, pasarlo a clase
 			//uint8_t  r = beatsin8(5, 0, 19, 0, 0);
-
 			uint8_t  i = beatsin8(mcbpm, mcxc - mcrad, mcxc + mcrad, 0, 0);
 			uint8_t  j = beatsin8(mcbpm, mcyc - mcrad, mcyc + mcrad, 0, 64 * mcdir + 192 * !mcdir);// la misma frecuencia hace un circulo con y defasado 64 gira horario y defasado192 en anti
 			c_leds(i, j) = mccolor;
-
 			blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);
 		}
 	}
@@ -505,14 +495,14 @@ typedef struct {
 
 TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ LedsNoise		,"LedsNoise",	0/* nada*/		,0	 /* nada1*/ },//32
-	{ Dots1			,"Dots1",		1	/*color1 */	, 1 /*color2 */ },
+	{ Dots1			,"Dots1",		1	/*color1 */	, 120 /*color2 */ },
 	{ Dots2			,"Dots2",		125 /*scale*/	, 0 /*no se usa*/},
-	{ SlowMandala2,	"SlowMandala2",	127 /*dim*/		, 0 /*no se usa*/},
+	{ SlowMandala2,	"SlowMandala2",	127 /*dim*/		, 240 /*no se usa*/},
 	{ SlowMandala3,	"SlowMandala3",	127 /*dim*/		, 0 /*no se usa*/},
 	{ Mandala8		,"Mandala8",	86 /*dim*/		, 0 /*no se usa*/},
 	{ CaleidoTest2	,"CaleidoTest2",	240 /* dim*/	,150 /* color_ofset*/},
 	{ CaleidoTest1	,"CaleidoTest1",	240 /* dim*/	,32 /* hdiv*/ },
-	{ NoiseExample1	,"NoiseExample1",	1 /* hpow2*/	,255 /* s*/ },
+	{ NoiseExample1	,"NoiseExample1",	2 /* hpow2*/	,255 /* s*/ },
 	{ NoiseExample2	,"NoiseExample2",	100/*noisez*/	,100 /* scale*/},
 	{ NoiseExample3	,"NoiseExample3",	100/*noisez*/	,100 /* scale*/ },
 	{ NoiseExample4	,"NoiseExample4",	100/*noisez*/	,100 /* scale*/ },
@@ -540,7 +530,7 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ CopyTest		,"CopyTest",	200 /* dim*/	, 10 /*hmult*/ },
 	{ CopyTest2		,"CopyTest2",	200 /* dim*/	, 10 /*hmult*/ },
 	{ Audio1		,"Audio1",		10 /*dim*/		,15 /*hmult*/ }, // hmult antes 15
-	{ Audio2		,"Audio2",		120 /*dim*/		,15 /*hmult*/ },
+	{ Audio2		,"Audio2",		120 /*dim*/		,35 /*hmult*/ }, // antes 15
 	{ Audio3		,"Audio3",		255 /*dim*/		,27 /*hmult*/ },
 	{ Audio4		,"Audio4",		12 /*dim*/		,32 /*hdiv*/ },
 	{ Audio5		,"Audio5",		9 /*dim*/		,30 /* hmult*/ },
@@ -721,7 +711,7 @@ void loop()
 		ledState = !ledState;
 		digitalWrite(LED_BUILTIN, ledState);
 	}
-	h = hue;
+	h = hue++;
 	settingsServerTask(); // OTA and client handle
 	//webSocket.loop();// handles websockets
 	connectToMQTT(); // verify client connected and reconnect if needed

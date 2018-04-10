@@ -492,18 +492,18 @@ void LedsNoise (byte nada,byte nada1)
 // 2 oscillators flying arround one ;)
 void Dots1(uint8_t color1, uint8_t color2) {
 	MoveOscillators();
+	ReadAudio();
 	//2 lissajous dots red
-	byte c1 = color1;
-	byte c2 = color2;
-	if (myparameter1 > 2) { c1 = myparameter1; c2 = 255 - c1; }
-	leds[XY(p[0], p[1])] = CHSV(c1, 255, 255);
-	leds[XY(p[2], p[3])] = CHSV(c2, 255, 150);
+	byte c1 = color1+h;
+	byte c2 = color2+h;
+	//if (myparameter1 > 2) { c1 = myparameter1; c2 = 255 - c1; }
+	leds[XY(p[0], p[1])] = CHSV(c1, 255, myValue+soundOffset(2));
+	leds[XY(p[2], p[3])] = CHSV(c2, 255, myValue+soundOffset(4));
 	//average of the coordinates in yellow
-	Pixel((p[2] + p[0]) / 2, (p[1] + p[3]) / 2, 50);
+	PixelHsv((p[2] + p[0]) / 2, (p[1] + p[3]) / 2, CHSV(50,255,soundOffset(3)));
 	ShowFrame();
-
-	FastLED.delay(20);
-	HorizontalStream(myparameter1); // antes scale
+	FastLED.delay(5+random(20)); // antes 20
+	HorizontalStream(myparameter1); // antes scale valor correcto 140
 	
 }
 
@@ -519,12 +519,16 @@ void Dots2(uint8_t scale, uint8_t nada) {
 }
 
 // beautifull but periodic
-void SlowMandala2(byte dim, byte nada) {
+void SlowMandala2(byte dim, byte val) {
 	for (int i = 1; i < 8; i++) {
 		for (int j = 0; j < 16; j++) {
 			MoveOscillators();
-			Pixel(j, i, (osci[0] + osci[1])/2); // max (15+15)*8
-			SpiralStream(4, 4, 4, dim); // antes dim
+			myParameter2 = val*(myMode)+!(myMode)*myValue; //
+			CHSV color = CHSV(((osci[0] + osci[1]) / 2), mySaturation, myParameter2);
+			PixelHsv(j, i,color); // max (15+15)*8
+			myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+			int dimAux = map(myParameter2, 0, 255, 95, 130);
+			SpiralStream(4, 4, 4, dimAux); // antes dim
 			Caleidoscope2();
 			ShowFrame();
 			FastLED.delay(20);
@@ -553,7 +557,9 @@ void Mandala8(byte dim, byte nada) {
 	Pixel(p[2] / 2, p[3] / 2, osci[3]);
 	Caleidoscope5();
 	Caleidoscope2();
-	HorizontalStream(myparameter1); //antes dim
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	int dimAux = map(myParameter2, 0, 255, 20, 110);
+	HorizontalStream(dimAux); //antes dim
 	ShowFrame();
 }
 
@@ -746,11 +752,12 @@ void CopyTest2(byte dim, byte hmult) {
 void Audio1(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		//left[i]= (left[i] < left_offset[i]) ? 0 : left[i];
-		int s1 = left[i] / 64;// map(left[i], 0, 1023, 0, 16);
-		//left[i+1] = (left[i+1] < left_offset[i+1]) ? 0 : left[i+1];
-		int s2 = left[i + 1] / 64;// map(left[i + 1], 0, 1023, 0, 16);
-		BresenhamLine(3 * i, 16 -s1, 3 * (i + 1), 16 -s2, myHue + i*hmult);
+		int s1 =soundOffset(i) ;
+		s1= map(s1, 0, 1023, 0, 15);
+		int s2 = soundOffset(i+1) ;
+		s2= map(s2, 0, 1023, 0, 15);
+		CHSV color = CHSV(myHue + i*hmult, mySaturation, soundAverage());
+		BresenhamLineHsv(3 * i, 15 -s1, 3 * (i + 1), 15 -s2,color);
 	}
 	Caleidoscope4();
 	ShowFrame();
@@ -762,70 +769,112 @@ void Audio1(byte dim, byte hmult) {
 void Audio2(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		BresenhamLine(3 * i, 16 - left[i] / 64, 3 * (i + 1), 16 - left[i + 1] / 64, 255 - i*hmult);
+		int s1 = soundOffset(i);
+		s1 = map(s1, 0, 1023, 0, 15);
+		int s2 = soundOffset(i + 1);
+		s2 = map(s2, 0, 1023, 0, 15);
+		BresenhamLine(3 * i, 15 - s1, 3 * (i + 1), 15 -s2, 255 - i*hmult);
 	}
 	ShowFrame();
-	HorizontalStream(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	HorizontalStream(myParameter2);
 }
 
 void Audio3(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 7; i++) {
-		leds[XY(6 - i, right[i] / 128)] = CHSV(i*hmult, 255, right[i]);
+		int s1 = soundOffset(i);
+		int s2  = map(s1, 0, 1023, 0, 8);
+		leds[XY(7 - i,s2)] = CHSV(i*hmult, 255,soundAverage()); // antes 6
 	} // brightness should be divided by 4
 	Caleidoscope6();
 	Caleidoscope2();
 	ShowFrame();
-	DimAll(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
 }
 
 void Audio4(byte dim, byte hdiv) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
-		BresenhamLine(3 * i, 8 - left[i] / 128, 3 * (i + 1), 8 - left[i + 1] / 128, i*left[i] / hdiv);
+		int s1 = soundOffset(i);
+		int s2 = map(s1, 0, 1023, 0, 8);
+		CHSV color = CHSV(i*s1 / hdiv, mySaturation, soundAverage()+myValue);
+		BresenhamLineHsv(3 * i, 8 -s2, 3 * (i + 1), 8 - soundOffset(i + 1) / 128,color);
 	}
 	Caleidoscope4();
 	ShowFrame();
-	DimAll(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
 }
 
 void CaleidoTest1(byte dim, byte hdiv) {
 	ReadAudio();
-	for (int i = 0; i < 7; i++) {
-		BresenhamLine(i, left[i] / 256, i, 0, left[i] / hdiv);
+	for (int i = 0; i < 8; i++) {
+		int ch = (i < 7) ? i :6;
+		int s1 = soundOffset(ch);
+		int s2 = map(s1, 0, 1023, 0, 8);
+		CHSV color = CHSV(s1, mySaturation, s1/4 + myValue);
+		BresenhamLineHsv(i,s2, i, 0,color);
 	}
 	RotateTriangle();
 	Caleidoscope2();  //copy + rotate
 	ShowFrame();
-	DimAll(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
 }
 
 void CaleidoTest2(byte dim, byte color_ofset) {
 	MoveOscillators();
 	ReadAudio();
-	for (int i = 0; i < 7; i++) {
-		BresenhamLine(i, left[i] / 200, i, 0, ((left[i] / 16) + myparameter1)%255); // antes color_offset
+	for (int i = 0; i < 8; i++) {
+		int ch = (i < 7) ? i : 6;
+		int s1 = soundOffset(ch);
+		BresenhamLine(i, s1 / 200, i, 0, ((s1 / 8) + myHue)%255); // antes color_offset
 	}
 	MirrorTriangle();
 	Caleidoscope1();  //mirror + rotate
 	ShowFrame();
-	DimAll(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
 }
 
 void Audio5(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
 		BresenhamLine(
-			3 * i, 8 - left[i] / 128,        // from
-			3 * (i + 1), 8 - left[i + 1] / 128,  // to
+			3 * i, 8 - soundOffset(i)/ 128,        // from
+			3 * (i + 1), 8 - soundOffset(i+1) / 128,  // to
 			i * hmult);
 	}                       // color
 	Caleidoscope4();
 	ShowFrame();
-	DimAll(dim);
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
 }
 
+// este es una version mas tipo vumetro del audio 6, este es cuadrado
 void Audio6(byte dim, byte hmult) {
+	ReadAudio();
+	for (int i = 0; i < 16; i++) {
+		int ch = map(i, 0, 15, 0, 5);
+		BresenhamLine(		
+			 i, 8 - soundOffset(ch) / 128,        // from
+			 (i ), 8 -soundOffset(ch+1) / 128,  // to
+			i * 10);                         // lolor
+		BresenhamLine(
+			15 - i, 7 + soundOffset(ch) / 128,        // from
+			15 - i, 7 + soundOffset(ch+1) / 128,  // to
+			i * hmult);                              // color
+	}
+	ShowFrame();
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
+	//ClearAll();
+}
+
+
+void Audio7(byte dim, byte hmult) {
 	ReadAudio();
 	for (int i = 0; i < 5; i++) {
 		BresenhamLine(
@@ -838,40 +887,47 @@ void Audio6(byte dim, byte hmult) {
 			i * hmult);                              // color
 	}
 	ShowFrame();
-	DimAll(dim);
-	//ClearAll();
+	myParameter2 = dim*(myMode)+!(myMode)*myparameter1; //
+	DimAll(myParameter2);
+
 }
 
-void NoiseExample1(byte hpow2, byte s) {
+void NoiseExample1(byte hpow2, byte scale1) {
 	MoveOscillators();
-	scale2 = 30 + p[1] * 3;
+	scale = scale1 * (myMode)+!(myMode)*myparameter1; // fill noise zoom
+	myParameter2 = 255*(myMode)+!(myMode)*mySaturation; // default value in auto mode
+	scale2 = 30 + p[1] * 3; // fill noise2 zoom
 	x = p[0] * 16;
 	fillnoise8();
 	fillnoise82();
 	for (int i = 0; i < kMatrixWidth; i++) {
 		for (int j = 0; j < kMatrixHeight; j++) {
 			leds[XY(i, j)] =
-				CHSV(noise[i][j] << hpow2, s, (noise2[i][j] + noise[i][j]) / 2);
+				CHSV(noise[i][j] << hpow2, myParameter2, (noise2[i][j] + noise[i][j]) / 2);
 		}
 	}
 	ShowFrame();
 }
 
-void NoiseExample2(byte noisez, byte scale) {
+void NoiseExample2(byte noisez, byte scale) { //original  100 , 100
 	MoveOscillators();
-	FillNoise(2000 - p[2] * 100, 100, noisez, scale);
+	myParameter2 = scale*(myMode)+!(myMode)*myparameter1; // 124
+	myParameter3 = noisez*(myMode)+!(myMode)*myHue; //
+	FillNoise(1550 - p[2] * 100, 100, myParameter3 +z, myParameter2);
 	for (int i = 0; i < p[2]; i++) {
 		for (int j = 0; j < kMatrixHeight; j++) {
-			leds[XY(i, j)] = CRGB(noise[i][j], 0, 0);
+			CHSV color = CHSV(myHue, mySaturation, (noise[i][j] < myValue) ? 0 : noise[i][j]);
+			leds[XY(i, j)] = CHSV(color);
 		}
 	}
 	for (int i = 0; i < p[1]; i++) {
 		for (int j = 0; j < kMatrixHeight; j++) {
-			leds[XY(j, i)] += CRGB(0, 0, noise[i][j]);
+			leds[XY(j, i)] += CHSV( noise[i][j],mySaturation, noise[i][j]);
 		}
 	}
 	ShowFrame();
 	ClearAll();
+	z+=0 ;
 }
 
 void NoiseExample3(byte noisez, byte scale) {
@@ -892,8 +948,25 @@ void NoiseExample3(byte noisez, byte scale) {
 	ShowFrame();
 	ClearAll();
 }
-
+//
 void NoiseExample4(byte noisez, byte scale) {
+	MoveOscillators();
+	myParameter2 = scale*(myMode)+!(myMode)*myparameter1; // 124
+	myParameter3 = noisez*(myMode)+!(myMode)*myValue; //
+	FillNoise(100, 100, myParameter3, myParameter2);
+	for (int i = 0; i < 16; i++) {
+		for (int j = 0; j < kMatrixHeight; j++) {
+			CHSV color= CHSV(noise[i][j + p[1]]+myHue, mySaturation, noise[i][j + p[1]]);
+			leds[XY(i, j)] += color;
+		}
+	}
+	ShowFrame();
+	ClearAll(); // hace efecto de cortina
+	//fadeToBlackBy(leds,NUM_LEDS,myValue);
+	z =myParameter3;
+}
+//noiseExample4  original
+void NoiseExample14(byte noisez, byte scale) {
 	MoveOscillators();
 	FillNoise(100, 100, noisez, scale);
 	for (int i = 0; i < p[0] + 1; i++) {
@@ -902,7 +975,8 @@ void NoiseExample4(byte noisez, byte scale) {
 		}
 	}
 	ShowFrame();
-	ClearAll();
+	//ClearAll(); // hace efecto de cortina
+	fadeToBlackBy(leds, NUM_LEDS, myValue);
 }
 
 void NoiseExample5(byte noisez, byte scale) {
@@ -929,32 +1003,31 @@ void NoiseExample5(byte noisez, byte scale) {
 
 void NoiseExample6(byte hofset, byte scale) {
 	//MoveOscillators();
-	for (int size = 1; size < scale; size++) {
+	myParameter2 = scale*(myMode)+!(myMode)*myparameter1; // 124
+	myParameter3 = hofset*(myMode)+!(myMode)*myValue; //
+	for (int size = 1; size < myParameter2; size++) {
 		z++;
-
-
+		// simula que hace zoom
 		FillNoise(size, size, z, size);
-
 		for (int i = 0; i < kMatrixWidth; i++) {
-
 			for (int j = 0; j < kMatrixHeight; j++) {
+				myParameter3 = (noise[i][j] > 30) ? myValue : 0;
 				yield();
-
-				leds[XY(i, j)] = CHSV(hofset + noise[i][j], 255, 255);
+				leds[XY(i, j)] = CHSV(myHue + noise[i][j], mySaturation, myParameter3);
 			}
 		}
-
-
 		ShowFrame();
 		//ClearAll();
-	}
-	for (int size = 200; size > 1; size--) {
+	} 
+	// simula que se reduce
+	for (int size = myParameter2; size > 2; size--) {
 		z++;
 		yield();
 		FillNoise(size, size, z, size);
 		for (int i = 0; i < kMatrixWidth; i++) {
 			for (int j = 0; j < kMatrixHeight; j++) {
-				leds[XY(i, j)] = CHSV(50 + noise[i][j], 255, 255);
+				myParameter3 = (noise[i][j] > 10) ? myValue : 0;
+				leds[XY(i, j)] = CHSV(myHue + noise[i][j], mySaturation, myParameter3);
 			}
 		}
 		ShowFrame();
@@ -1033,18 +1106,35 @@ void diagonalFill(byte nada, byte nada1) {
 void HorizontalStripes(byte nada, byte nada1) {
 	// ** Fill LED's with horizontal stripes
 	for (uint8 y = 0; y<c_leds.Height(); ++y)
+	{	
+		ReadAudio();
+		uint8_t val1 = uint8( map(soundOffset(2),0 ,1023, myValue,255));// limits max val according to   myValue setting
+		c_leds.DrawLine(0, y, c_leds.Width() - 1, y, CHSV(h, mySaturation, val1));
+		
+		h += 16;
+	}
+	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);// blur the individual circles
+	hue += 4;
+	FastLED.show();
+	fadeToBlackBy(c_leds[0], 480, 16);
+}
+// horizontal stripes original
+void HorizontalStripes1(byte nada, byte nada1) {
+	// ** Fill LED's with horizontal stripes
+	for (uint8 y = 0; y<c_leds.Height(); ++y)
 	{
 		c_leds.DrawLine(0, y, c_leds.Width() - 1, y, CHSV(h, 255, 255));
 
 
 		h += 16;
 	}
-	
+
 	blur2d(c_leds[0], MATRIX_WIDTH, MATRIX_HEIGHT, 16);// blur the individual circles
 	hue += 4;
 	FastLED.show();
 	fadeToBlackBy(c_leds[0], 480, 16);
 }
+
 
 void anillos(byte nada, byte nada1) {
 	// ** circulos concentricos
