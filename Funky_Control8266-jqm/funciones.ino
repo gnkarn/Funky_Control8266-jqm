@@ -1517,3 +1517,56 @@ int  soundOffset(byte ch) {  // return sound if value is > channel offset
 int soundAverage() {
 	return (soundOffset(0) + soundOffset(2) + soundOffset(3) + soundOffset(1) + soundOffset(4) + soundOffset(5) + soundOffset(6)) / 20;
 }
+
+// para funciones de stefan Petrick
+// cheap correction with gamma 2.0
+void adjust_gamma()
+{
+	// minimal brightness you want to allow
+	// make sure to have the global brightnes on maximum and run no other color correction
+	// a minimum of min = 1 might work fine for you and allow more contrast
+	uint8_t min = 3;
+	for (uint16_t i = 0; i < NUM_LEDS; i++)
+	{
+		leds[i].r = dim8_video(leds[i].r);
+		leds[i].g = dim8_video(leds[i].g);
+		leds[i].b = dim8_video(leds[i].b);
+
+		if (leds[i].r < min) leds[i].r = min;
+		if (leds[i].g < min) leds[i].g = min;
+		if (leds[i].b < min) leds[i].b = min;
+	}
+}
+
+void setup_tables() {
+	/*
+	for (uint16_t i = 0; i < 1024; i++) {
+	a[i] = sin8(i/4) ;
+	b[i] = 0;
+	c[i] = cubicwave8( i/2) ;
+	}
+	*/
+	for (uint16_t i = 256; i < 768; i++) {
+		a[i] = triwave8(127 + (i / 2));
+		//b[i] = 0;
+		//c[i] = triwave8(127 + (i / 2)) ;
+	}
+}
+// check the "palette"
+void show_palette() {
+
+	for (uint8_t y = 0; y < HEIGHT; y++) {
+		for (uint8_t x = 0; x < WIDTH; x++) {
+			leds[XY(x, y)] = CRGB(a[((x * 16) + y) * 4], b[((x * 16) + y) * 4], c[((x * 16) + y) * 4]);
+		}
+	}
+	adjust_gamma();
+	FastLED.show();
+}
+
+// check the Serial Monitor to see how many fps you get
+void show_fps() {
+	EVERY_N_MILLIS(100) {
+		Serial.println(LEDS.getFPS());
+	}
+}

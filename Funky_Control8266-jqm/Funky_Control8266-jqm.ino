@@ -265,6 +265,28 @@ CRGBPalette16 currentPalette(CRGB::Black);
 CRGBPalette16 targetPalette(CRGB::Black);
 uint8_t       colorLoop = 1;
 
+
+// variables para funciones de stefan
+// parameters and buffer for the noise array
+#define NUM_LAYERS 2
+uint32_t x_n[NUM_LAYERS];
+uint32_t y_n[NUM_LAYERS];
+uint32_t z_n[NUM_LAYERS];
+uint32_t scale_x[NUM_LAYERS];
+uint32_t scale_y[NUM_LAYERS];
+uint16_t noise_n[NUM_LAYERS][16][16];
+uint8_t CentreX = (WIDTH / 2) - 1;
+uint8_t CentreY = (HEIGHT / 2) - 1;
+CRGB buffer1[NUM_LEDS];
+CRGB buffer2[NUM_LEDS];
+//control parameters
+uint8_t ctrl[6];
+// colortables
+uint8_t a[1024];
+uint8_t b[1024];
+uint8_t c[1024];
+// fin variables para funciones de stefan
+
 // ***** Some Global  Variables ******
 uint8_t myOnOff = 1;					// general on off leds status
 byte myEffect = 1;                  //what animation/effect should be displayed
@@ -297,6 +319,10 @@ unsigned long lastChangeTime = 0;
 unsigned long currentChangeTime = 0;
 
 // fin seteo de variables del ledcontrol-8266 m,atriz-jqm
+
+
+
+
 
 // the rendering buffer (16*16)
 // do not touch
@@ -537,7 +563,8 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ Audio6		,"Audio6",		200 /*dim*/		,10 /* hmult*/ },
 	{ one_color_allHSV ,"one_color_allHSV",	41/* h*/		,180	 /* b*/ },
 	{ video			,"video"	,0 /* nada1*/		,0 /* nada2 */ },
-	{ offsets_test ,"offsets_test", 240 /*dim*/		, 10 /*hmult*/ }
+	{ offsets_test ,"offsets_test", 240 /*dim*/		, 10 /*hmult*/ },
+	{ noise_noise1 ,"noise_noise1",	0/* nada*/		,0	 /* nada1*/ }
 
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 };
@@ -686,6 +713,14 @@ void setup() {
 		fadeToBlackBy(c_leds[0], 480, 32);
 	}
 
+	// setup para funciones de noise de stefan petrick
+	randomSeed(analogRead(5));
+	x_n[0] = random(60000);
+	y_n[0] = random(60000);
+	z_n[0] = random(60000);
+	x_n[1] = random(60000);
+	y_n[1] = random(60000);
+	z_n[1] = random(60000);
 	// ---------------------------------
 
    // Actualiza la lista de efectos en la pagina web
