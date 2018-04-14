@@ -185,6 +185,8 @@ extern "C" {
 #define LED_TYPE    APA102
 #define COLOR_ORDER BGR
 
+int gcolor_temp = 312; // global color temperature in mireds from HASS
+
 int rawSerial;  // recibe el int desde slider de processing
 boolean testing = false;  // Default is false. [Ok to change for testing.]
   // Can temporarily change testing to true to check output in serial monitor.
@@ -572,7 +574,7 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ offsets_test ,"offsets_test", 240 /*dim*/		, 10 /*hmult*/ },
 	{ noise_noise1 ,"noise_noise1",	0/* nada*/		,0	 /* nada1*/ },
 	{noise_noise2,	"noise_noise2",		0/* nada*/		,0	 /* nada1*/ },
-	{ PatternFire ,	"PatternFire"	,0/* nada*/		,0	 /* nada1*/  },
+	{ PatternFire ,	"PatternFire"	,55/* cooling*/		,120	 /* sparking*/  },
 
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 };

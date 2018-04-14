@@ -1139,6 +1139,74 @@ void sendHeartBeat()
 	json = String();
 }
 
+// convert from kelvin to color , to set white
+CRGB temp2rgb(unsigned int kelvin) {
+	int tmp_internal = kelvin / 100.0;
+
+	// red 
+	if (tmp_internal <= 66) {
+		red = 255;
+	}
+	else {
+		float tmp_red = 329.698727446 * pow(tmp_internal - 60, -0.1332047592);
+		if (tmp_red < 0) {
+			red = 0;
+		}
+		else if (tmp_red > 255) {
+			red = 255;
+		}
+		else {
+			red = tmp_red;
+		}
+	}
+	// green
+	if (tmp_internal <= 66) {
+		float tmp_green = 99.4708025861 * log(tmp_internal) - 161.1195681661;
+		if (tmp_green < 0) {
+			green = 0;
+		}
+		else if (tmp_green > 255) {
+			green = 255;
+		}
+		else {
+			green = tmp_green;
+		}
+	}
+	else {
+		float tmp_green = 288.1221695283 * pow(tmp_internal - 60, -0.0755148492);
+		if (tmp_green < 0) {
+			green = 0;
+		}
+		else if (tmp_green > 255) {
+			green = 255;
+		}
+		else {
+			green = tmp_green;
+		}
+	}
+
+	// blue
+	if (tmp_internal >= 66) {
+		blue = 255;
+	}
+	else if (tmp_internal <= 19) {
+		blue = 0;
+	}
+	else {
+		float tmp_blue = 138.5177312231 * log(tmp_internal - 10) - 305.0447927307;
+		if (tmp_blue < 0) {
+			blue = 0;
+		}
+		else if (tmp_blue > 255) {
+			blue = 255;
+		}
+		else {
+			blue = tmp_blue;
+		}
+	}
+	return CRGB(red, green, blue);
+}
+
 // functions definitions for mqtt - to HASS
 // https://github.com/bruhautomation/ESP-MQTT-JSON-Digital-LEDs/blob/master/ESP_MQTT_Digital_LEDs/ESP_MQTT_Digital_LEDs.ino
 
@@ -1288,14 +1356,14 @@ bool processJson(char* message) {
 			blue = root["color"]["b"];
 		}
 
-		//if (root.containsKey("color_temp")) {
+		if (root.containsKey("color_temp")) {
 		//	//temp comes in as mireds, need to convert to kelvin then to RGB
-		//	int color_temp = root["color_temp"];
-		//	unsigned int kelvin = MILLION / color_temp;
+			gcolor_temp = root["color_temp"];
+			unsigned int kelvin = 1000000 / gcolor_temp;	
+			temp2rgb(kelvin);
+			FastLED.setTemperature(temp2rgb(kelvin));
 
-		//	temp2rgb(kelvin);
-
-		//}
+		}
 
 		if (root.containsKey("brightness")) {
 			myBrightness = root["brightness"];
@@ -1340,7 +1408,7 @@ void sendState() {
 
 	root["brightness"] = myBrightness;
 	root["effect"] = gPatternsAndArguments[gCurrentPatternNumber].mName;
-	root["color_temp"] = myParameter2;
+	root["color_temp"] = gcolor_temp;
 	root["white_value"] = myParameter3;
 	root["xy"] = myParameter4;
 
@@ -1650,7 +1718,7 @@ void MoveFractionalNoiseX(byte amt = 16) {
 	// move delta pixelwise
 	for (int y = 0; y < MATRIX_HEIGHT; y++) {
 		uint16_t amount = noise[0][0][y] * amt;
-		byte delta = 23 - (amount / 256); // antes 31
+		byte delta = (MATRIX_WIDTH-1) - (amount / 256); // antes 31
 
 		for (int x = 0; x < MATRIX_WIDTH - delta; x++) {
 			leds2[XY2(x, MATRIX_HEIGHT-y)] = c_leds(x + delta, y);
@@ -1666,7 +1734,7 @@ void MoveFractionalNoiseX(byte amt = 16) {
 
 	for (uint8_t y = 0; y < MATRIX_HEIGHT; y++) {
 		uint16_t amount = noise[0][0][y] * amt;
-		byte delta = 23 - (amount / 256); // antes 31
+		byte delta = (MATRIX_HEIGHT-1) - (amount / 256); // antes 31
 		byte fractions = amount - (delta * 256);
 
 		for (uint8_t x = 1; x < MATRIX_WIDTH; x++) {

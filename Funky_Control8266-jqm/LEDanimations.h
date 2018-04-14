@@ -1465,7 +1465,7 @@ uint32_t noise_z[NOISE_NUM_LAYERS];
 uint32_t noise_scale_x[NOISE_NUM_LAYERS];
 uint32_t noise_scale_y[NOISE_NUM_LAYERS];
 
-void  PatternFire(byte nada, byte nada1) {
+void  PatternFire(byte cooling1, byte sparking1) {
 	// There are two main parameters you can play with to control the look and
 	// feel of your fire: COOLING (used in step 1 above), and SPARKING (used
 	// in step 3 above).
@@ -1473,30 +1473,28 @@ void  PatternFire(byte nada, byte nada1) {
 	// cooling: How much does the air cool as it rises?
 	// Less cooling = taller flames.  More cooling = shorter flames.
 	// Default 55, suggested range 20-100
-	int cooling = constrain(ctrl[0],5,250);
+	int cooling = cooling1*(myMode)+!(myMode)*map8(ctrl[0], 5, 100);
+
 
 	// sparking: What chance (out of 255) is there that a new spark will be lit?
 	// Higher chance = more roaring fire.  Lower chance = more flickery fire.
 	// Default 120, suggested range 50-200.
-	unsigned int sparking = constrain(ctrl[1], 50, 200);
-
-
-		// Add entropy to random number generator; we use a lot of it.
+	unsigned int sparking = sparking1*(myMode)+!(myMode)* map8(ctrl[1], 50, 200);
+	// Add entropy to random number generator; we use a lot of it.
 	random16_add_entropy(random(255));
 
-	 //DimAll(byte value)
+	//DimAll(byte value)
 	for (int i = 0; i < MATRIX_WIDTH*MATRIX_HEIGHT; i++) {
-		c_leds(i).nscale8(64); // dim to 192/256 = 75% of original value
+		c_leds(i).nscale8(192); // dim to 192/256 = 75% of original value
 	}
 	FastLED.show();
-	
 
 	for (int x = 0; x < MATRIX_WIDTH; x++) {
 		// Step 1.  Cool down every cell a little
 		for (int y = 0; y < MATRIX_HEIGHT; y++) {
 			//int xy = XY2(x, y);// antes XY()
-			int xy = XY2(x, MATRIX_HEIGHT- y);// antes XY()
-			heat[xy] = qsub8(heat[xy], random8(0, cooling+2 ));// random8(0, ((cooling * 10) / MATRIX_HEIGHT) + 2));
+			int xy = XY2(x, MATRIX_HEIGHT - y);// antes XY()
+			heat[xy] = qsub8(heat[xy], random8(0, cooling + 2));// random8(0, ((cooling * 10) / MATRIX_HEIGHT) + 2));
 		}
 
 		// Step 2.  Heat from each cell drifts 'up' and diffuses a little
@@ -1510,13 +1508,13 @@ void  PatternFire(byte nada, byte nada1) {
 			// int x = (p[0] + p[1] + p[2]) / 3;
 
 			int xy = XY2(x, MATRIX_HEIGHT - 1);// original
-			
+
 			heat[xy] = qadd8(heat[xy], random8(160, 255));//random8(160, 255));
 		}
 
 		// Step 4.  Map from heat cells to LED colors
 		for (int y = 0; y < MATRIX_HEIGHT; y++) {
-			int xy = XY2(x, MATRIX_HEIGHT- y); // debo invertir la matriz de pallete
+			int xy = XY2(x, MATRIX_HEIGHT - y); // debo invertir la matriz de pallete
 			byte colorIndex = heat[xy];
 
 			// Recommend that you use values 0-240 rather than
@@ -1526,12 +1524,12 @@ void  PatternFire(byte nada, byte nada1) {
 			colorIndex = scale8(colorIndex, 240); // colorIndex  DEBUG !!
 
 			// override color 0 to ensure a black background?
-			if (colorIndex != 0)
-				//                    effects.leds[xy] = CRGB::Black;
-				//                else
+			//if (colorIndex = 0)
+				//c_leds(x, y) = CRGB::Black;
+			//else
 				leds2[xy] = ColorFromPalette(HeatColors_p, colorIndex, 255, LINEARBLEND);// ColorFromCurrentPalette(colorIndex, 255, LINEARBLEND);
 			//  ColorFromCurrentPalette(uint8_t index = 0, uint8_t brightness = 255, TBlendType blendType = LINEARBLEND)
-			c_leds(x, y) =  leds2[xy];
+			c_leds(x, y) = leds2[xy];
 			//c_leds(x, 0) = CRGB(255, 0, 0);// DEBUG
 		}
 	}
@@ -1539,25 +1537,24 @@ void  PatternFire(byte nada, byte nada1) {
 	// Noise smearing
 	noise_x[0] += 1000;
 	noise_y[0] += 1000;
-	noise_z[0] +=1000;//1000
+	noise_z[0] += 1000;//1000
 	noise_scale_x[0] = 4000;
 	noise_scale_y[0] = 4000;
 	FillNoiseFire(0);
 
-	MoveX(3);
-	//MoveFractionalNoiseX(4);
+	MoveX(3);// con 2 funciona ok
+	MoveFractionalNoiseX(4);
 	FastLED.show();
-	FastLED.delay(3);
-	
+	FastLED.delay(10);
 };
 
-// Show the current palette.
+// Show the current palette., nombre de la funcion cambiado para usar el "video" en el menu de hass
 void video(byte nada, byte nada1) {
 	//void ShowPalette() {
 	for (int i = 0; i < 480; i++) {
 		byte color = i / (NUM_LEDS / 256);
 		byte bri = 255;
-		c_leds(i)= ColorFromPalette(HeatColors_p, color, bri);
+		c_leds(i) = ColorFromPalette(HeatColors_p, color, bri);
 	}
 	FastLED.show();
 }
