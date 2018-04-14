@@ -145,6 +145,9 @@ String oldeffectString = "Dots1,";
 #define MQTT_SOUND_STAT_TOPIC "tablero/sound/stat"
 #define MQTT_OFFSETS_CMND_TOPIC "tablero/offsets/cmnd"
 #define MQTT_OFFSETS_STAT_TOPIC "tablero/offsets/stat"
+
+#define MQTT_CTRL_CMND_TOPIC "tablero/ctrl/cmnd"
+#define MQTT_CTRL_STAT_TOPIC "tablero/ctrl/stat"
 // for sound mqtt update frecuency
 
 unsigned long sample_millis=0;
@@ -258,11 +261,14 @@ uint8_t speed = 10; //20  speed is set dynamically once we've started up
 // of 1 will be so zoomed in, you'll mostly see solid colors.
 uint8_t scale = 30; // scale is set dynamically once we've started up
 
-// This is the array that we keep our computed noise values in
-uint8_t noise[MAX_DIMENSION][MAX_DIMENSION];
-CRGBPalette16 currentPalette(CRGB::Black);
+// This is the array that we keep our computed noise values for fire effects
+//uint8_t noise[MAX_DIMENSION][MAX_DIMENSION];
+#define NOISE_NUM_LAYERS 1
+uint8_t noise[NOISE_NUM_LAYERS][MAX_DIMENSION][MAX_DIMENSION];
 
-CRGBPalette16 targetPalette(CRGB::Black);
+CRGBPalette16 currentPalette(HeatColors_p);
+
+CRGBPalette16 targetPalette(HeatColors_p);
 uint8_t       colorLoop = 1;
 
 
@@ -280,7 +286,7 @@ uint8_t CentreY = (HEIGHT / 2) - 1;
 CRGB buffer1[NUM_LEDS];
 CRGB buffer2[NUM_LEDS];
 //control parameters
-uint8_t ctrl[6];
+uint8_t ctrl[6] = { 128 };
 // colortables
 uint8_t a[1024];
 uint8_t b[1024];
@@ -564,7 +570,9 @@ TwoArgumentPatterWithArgumentValues gPatternsAndArguments[] = {
 	{ one_color_allHSV ,"one_color_allHSV",	41/* h*/		,180	 /* b*/ },
 	{ video			,"video"	,0 /* nada1*/		,0 /* nada2 */ },
 	{ offsets_test ,"offsets_test", 240 /*dim*/		, 10 /*hmult*/ },
-	{ noise_noise1 ,"noise_noise1",	0/* nada*/		,0	 /* nada1*/ }
+	{ noise_noise1 ,"noise_noise1",	0/* nada*/		,0	 /* nada1*/ },
+	{noise_noise2,	"noise_noise2",		0/* nada*/		,0	 /* nada1*/ },
+	{ PatternFire ,	"PatternFire"	,0/* nada*/		,0	 /* nada1*/  },
 
 	//las funciones de  demoreel 100 adaptarlas para matriz e incluir
 };
@@ -622,11 +630,11 @@ void setup() {
 
 	LEDS.addLeds<LED_TYPE, DATA_PIN, CLK_PIN, COLOR_ORDER>(c_leds[0], c_leds.Size()).setCorrection(TypicalSMD5050);
 
-	//FastLED.setDither(0); // disable temporal dithering
+
 	FastLED.setBrightness(BRIGHTNESS);
 	//set_max_power_in_volts_and_milliamps(5, MILLI_AMPERE);
 	LEDColorCorrection{ TypicalSMD5050 };
-	FastLED.setDither(1);
+	FastLED.setDither(0); // disable temporal dithering
 	// just for debugging:
 
 	InitMSGEQ7();
@@ -713,7 +721,8 @@ void setup() {
 		fadeToBlackBy(c_leds[0], 480, 32);
 	}
 
-	// setup para funciones de noise de stefan petrick
+	// setup para funciones de NOISE.noise1 Y 2 de stefan petrick
+	setup_tables();
 	randomSeed(analogRead(5));
 	x_n[0] = random(60000);
 	y_n[0] = random(60000);
@@ -722,6 +731,7 @@ void setup() {
 	y_n[1] = random(60000);
 	z_n[1] = random(60000);
 	// ---------------------------------
+	fire_NoiseVariablesSetup(); // for fire effect
 
    // Actualiza la lista de efectos en la pagina web
 	sendAll();
@@ -751,7 +761,7 @@ void loop()
 	//webSocket.loop();// handles websockets
 	connectToMQTT(); // verify client connected and reconnect if needed
 	EVERY_N_SECONDS(5) {
-		sendHeartBeat(); // envia el json de HB} al cliente WEB
+		//sendHeartBeat(); // envia el json de HB} al cliente WEB
 	}
 
 	// For discovering parameters of examples I reccomend to

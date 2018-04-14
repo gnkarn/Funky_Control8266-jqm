@@ -119,8 +119,9 @@ uint16_t XY(uint8_t x, uint8_t y) {
 // translates from x, y into an index into the LED array and
 // finds the right index for a S shaped matrix
 // para la matriz custom
-/*
+
 int XY2(int x, int y) {
+	//y = MATRIX_HEIGHT - y; // el cero esta abajo , pero la tira comienza por arriba
 	if (y > CUSTOM_HEIGHT) {
 		y = CUSTOM_HEIGHT;
 	}
@@ -157,7 +158,7 @@ int XY2(int x, int y) {
 	}
 }
 
-*/
+
 //*************************************************
 // Bresenham line algorythm based on 2 coordinates
 void BresenhamLine(int x0, int y0, int x1, int y1, byte color) {
@@ -692,7 +693,7 @@ void fillnoise8() {
 		int ioffset = scale * i;
 		for (int j = 0; j < MAX_DIMENSION; j++) {
 			int joffset = scale * j;
-			noise[i][j] = inoise8(x + ioffset, y + joffset, z);
+			noise[0][i][j] = inoise8(x + ioffset, y + joffset, z);
 		}
 	}
 	y += speed;
@@ -716,7 +717,7 @@ void FillNoise(uint16_t x, uint16_t y, uint16_t z, uint16_t scale) {
 		int ioffset = scale * i;
 		for (int j = 0; j < MAX_DIMENSION; j++) {
 			int joffset = scale * j;
-			noise[i][j] = inoise8(x + ioffset, y + joffset, z);
+			noise[0][i][j] = inoise8(x + ioffset, y + joffset, z);
 		}
 	}
 }
@@ -861,7 +862,7 @@ void NoiseExample8() {
 	FillNoise(x * 3, x * 3, z, sin8(x) >> 1);
 	for (int i = 0; i < kMatrixWidth; i++) {
 		for (int j = 0; j < kMatrixHeight; j++) {
-			leds[XY_Chico(i, j)] = ColorFromPalette(currentPalette, noise[i][j], 255, currentBlending);
+			leds[XY_Chico(i, j)] = ColorFromPalette(currentPalette, noise[0][i][j], 255, currentBlending);
 		}
 	}
 	ShowFrame();
@@ -1182,6 +1183,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 			if (String(MQTT_OFFSETS_CMND_TOPIC).equals(topic)) {
 				sendOffsetsState(payload);
 			}
+			else 
+				if (String(MQTT_CTRL_CMND_TOPIC).equals(topic)){
+					sendCtrlState(payload);
+				}
+			
 			else
 			{
 				if (!processJson(message)) {
@@ -1201,9 +1207,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 				myOnOff = stateOn;
 
 				Serial.println(effect);
-
-				//startFade = true;
-				//inFade = false; // Kill the current fade
 
 				sendState();
 			}
@@ -1393,6 +1396,7 @@ void connectToMQTT() {
 				subscribeToMQTT(MQTT_MODE_CMND_TOPIC);  // para el switch de modo auto man
 				subscribeToMQTT(MQTT_HSV_CMND_TOPIC);  // para sliders HSV
 				subscribeToMQTT(MQTT_OFFSETS_CMND_TOPIC);  // para sliders HSV
+				subscribeToMQTT(MQTT_CTRL_CMND_TOPIC);  // para sliders DE CONTROL DE PARAMETROS
 				FastLED.clear(1);
 				sendState();
 				// podria colocar el codigo para autodiscovery de HASS
@@ -1486,6 +1490,29 @@ void sendOffsetsState(byte * payload) {
 		DEBUG_PRINTLN(left_offset[0]);
 	}
 }
+
+void sendCtrlState(byte * payload) {
+	DynamicJsonBuffer dynamicJsonBuffer;
+	JsonObject& root = dynamicJsonBuffer.parseObject(payload);
+	if (!root.success()) {
+		DEBUG_PRINTLN(F("ERROR: parseObject() failed"));
+		return;
+	}
+	if (root.containsKey("ctrl")) {
+		// estract values received
+		for (int i = 0; i < 6; i++) {
+			ctrl[i] = root["ctrl"]["ctrl" + String(i)];
+		}
+
+		// send state back
+		char buffer[root.measureLength() + 1];
+		root.printTo(buffer, sizeof(buffer));
+		publishToMQTT(MQTT_CTRL_STAT_TOPIC, buffer, true); // sends inmediate feedback for state
+		DEBUG_PRINT(F("ctrl0 : "));
+		DEBUG_PRINTLN(ctrl[0]);
+	}
+}
+// is too slow , so used only for debuging , study how to improve
 void update_mqtt_gauges() {
 	// publish sound channel to mqtt as tablero/sound/stat
 	// payload "soundCh":{"Ch":0-6,"val":0-255}
@@ -1514,6 +1541,7 @@ int  soundOffset(byte ch) {  // return sound if value is > channel offset
 	return left[ch];
 }
 
+// improve a calculation for "average energy" with a recursive digital filter 
 int soundAverage() {
 	return (soundOffset(0) + soundOffset(2) + soundOffset(3) + soundOffset(1) + soundOffset(4) + soundOffset(5) + soundOffset(6)) / 20;
 }
@@ -1562,11 +1590,186 @@ void show_palette() {
 	}
 	adjust_gamma();
 	FastLED.show();
+
 }
 
 // check the Serial Monitor to see how many fps you get
 void show_fps() {
 	EVERY_N_MILLIS(100) {
 		Serial.println(LEDS.getFPS());
+	}
+}
+
+
+// funciones para fire 
+// https://github.com/pixelmatix/aurora/blob/d087efe69b539e2c00a026dde2fa205210d4f3b3/Effects.h
+CRGB ColorFromCurrentPalette(uint8_t index = 0, uint8_t brightness = 255, TBlendType blendType = LINEARBLEND) {
+	return ColorFromPalette(currentPalette, index, brightness, currentBlendType);
+}
+
+void MoveX(byte delta) {
+	for (int y = 0; y < MATRIX_HEIGHT; y++) {
+		for (int x = 0; x < MATRIX_WIDTH - delta; x++) {
+			//leds2[XY2(x,  y)] = c_leds(x + delta, y); // original
+			leds2[XY2(x, MATRIX_HEIGHT- y)] = c_leds(x + delta, y);
+		}
+		for (int x = MATRIX_WIDTH - delta; x < MATRIX_WIDTH; x++) {
+			//leds2[XY2(x, y)] = c_leds(x + delta - MATRIX_WIDTH, y);//original
+			leds2[XY2(x, MATRIX_HEIGHT- y)] = c_leds(x + delta - MATRIX_WIDTH, y);
+		}
+	}
+
+	// write back to leds
+	for (uint8_t y = 0; y < MATRIX_HEIGHT; y++) {
+		for (uint8_t x = 0; x < MATRIX_WIDTH; x++) {
+			//c_leds(x, y) = leds2[XY2(x, y)];// original
+			c_leds(x, y) = leds2[XY2(x, MATRIX_HEIGHT- y)];
+		}
+	}
+}
+
+void MoveY(byte delta) {
+	for (int x = 0; x < MATRIX_WIDTH; x++) {
+		for (int y = 0; y < MATRIX_HEIGHT - delta; y++) {
+			leds2[XY2(x, y)] = c_leds[0][XY2(x, y + delta)];
+		}
+		for (int y = MATRIX_HEIGHT - delta; y < MATRIX_HEIGHT; y++) {
+			leds2[XY2(x, y)] = c_leds(x, y + delta - MATRIX_HEIGHT);
+		}
+	}
+
+	// write back to leds
+	for (uint8_t y = 0; y < MATRIX_HEIGHT; y++) {
+		for (uint8_t x = 0; x < MATRIX_WIDTH; x++) {
+			c_leds(x,y) = leds2[XY2(x, y)];
+		}
+	}
+}
+
+void MoveFractionalNoiseX(byte amt = 16) {
+	// move delta pixelwise
+	for (int y = 0; y < MATRIX_HEIGHT; y++) {
+		uint16_t amount = noise[0][0][y] * amt;
+		byte delta = 23 - (amount / 256); // antes 31
+
+		for (int x = 0; x < MATRIX_WIDTH - delta; x++) {
+			leds2[XY2(x, MATRIX_HEIGHT-y)] = c_leds(x + delta, y);
+		}
+		for (int x = MATRIX_WIDTH - delta; x < MATRIX_WIDTH; x++) {
+			leds2[XY2(x, MATRIX_HEIGHT- y)] = c_leds(x + delta - MATRIX_WIDTH, y);
+		}
+	}
+
+	//move fractions
+	CRGB PixelA;
+	CRGB PixelB;
+
+	for (uint8_t y = 0; y < MATRIX_HEIGHT; y++) {
+		uint16_t amount = noise[0][0][y] * amt;
+		byte delta = 23 - (amount / 256); // antes 31
+		byte fractions = amount - (delta * 256);
+
+		for (uint8_t x = 1; x < MATRIX_WIDTH; x++) {
+			PixelA = leds2[XY2(x, MATRIX_HEIGHT- y)];
+			PixelB = leds2[XY2(x - 1, MATRIX_HEIGHT- y)];
+
+			PixelA %= 255 - fractions;
+			PixelB %= fractions;
+
+			c_leds(x, y) = PixelA + PixelB;
+		}
+
+		PixelA = leds2[XY2(0, MATRIX_HEIGHT- y)];
+		PixelB = leds2[XY2(MATRIX_WIDTH - 1, MATRIX_HEIGHT-y)];
+
+		PixelA %= 255 - fractions;
+		PixelB %= fractions;
+
+		c_leds(0, y) = PixelA + PixelB;
+	}
+}
+
+void MoveFractionalNoiseY(byte amt = 16) {
+	// move delta pixelwise
+	for (int x = 0; x < MATRIX_WIDTH; x++) {
+		uint16_t amount = noise[0][x][0] * amt;
+		byte delta = 19 - (amount / 256);// antes 31
+
+		for (int y = 0; y < MATRIX_WIDTH - delta; y++) {
+			leds2[XY2(x, y)] = c_leds(x, y + delta);
+		}
+		for (int y = MATRIX_WIDTH - delta; y < MATRIX_WIDTH; y++) {
+			leds2[XY2(x, y)] = c_leds(x, y + delta - MATRIX_WIDTH);
+		}
+	}
+
+	//move fractions
+	CRGB PixelA;
+	CRGB PixelB;
+
+	for (uint8_t x = 0; x < MATRIX_HEIGHT; x++) {
+		uint16_t amount = noise[0][x][0] * amt;
+		byte delta = 23 - (amount / 256); // antes 31
+		byte fractions = amount - (delta * 256);
+
+		for (uint8_t y = 1; y < MATRIX_WIDTH; y++) {
+			PixelA = leds2[XY2(x, y)];
+			PixelB = leds2[XY2(x, y - 1)];
+
+			PixelA %= 255 - fractions;
+			PixelB %= fractions;
+
+			c_leds(x, y) = PixelA + PixelB;
+		}
+
+		PixelA = leds2[XY2(x, 0)];
+		PixelB = leds2[XY2(x, MATRIX_WIDTH - 1)];
+
+		PixelA %= 255 - fractions;
+		PixelB %= fractions;
+
+		c_leds(x, 0) = PixelA + PixelB;
+	}
+}
+
+void FillNoiseFire(byte layer) {
+	for (uint8_t i = 0; i < MATRIX_WIDTH; i++) {
+		uint32_t ioffset = noise_scale_x[layer] * (i - MATRIX_CENTRE_Y);
+
+		for (uint8_t j = 0; j < MATRIX_HEIGHT; j++) {
+			uint32_t joffset = noise_scale_y[layer] * (j - MATRIX_CENTRE_Y);
+
+			byte data = inoise16(noise_x[layer] + ioffset, noise_y[layer] + joffset, noise_z[layer]) >> 8;
+
+			uint8_t olddata = noise[layer][i][j];
+			uint8_t newdata = scale8(olddata, noisesmoothing) + scale8(data, 256 - noisesmoothing);
+			data = newdata;
+
+			noise[layer][i][j] = data;
+		}
+	}
+}
+void standardNoiseSmearing() {
+	noise_x[0] += 1000;
+	noise_y[0] += 1000;
+	noise_scale_x[0] = 4000;
+	noise_scale_y[0] = 4000;
+	FillNoiseFire(0);
+
+	MoveX(3);
+	MoveFractionalNoiseY(4);
+	MoveX(3);
+	MoveFractionalNoiseY(4);
+}
+
+void fire_NoiseVariablesSetup() {
+	noisesmoothing = 200;
+
+	for (int i = 0; i < NOISE_NUM_LAYERS; i++) {
+		noise_x[i] = random16();
+		noise_y[i] = random16();
+		noise_z[i] = random16();
+		noise_scale_x[i] = 6000;
+		noise_scale_y[i] = 6000;
 	}
 }
